@@ -1,0 +1,30 @@
+# Code Owners for modbridge
+
+# Default owner for everything
+*                   @Xerolux
+
+# Core packages
+/pkg/api/           @Xerolux
+/pkg/proxy/         @Xerolux
+/pkg/manager/       @Xerolux
+/pkg/devices/       @Xerolux
+
+# Configuration
+/pkg/config/        @Xerolux
+
+# Security & Authentication
+/pkg/auth/          @Xerolux
+
+# Infrastructure
+/.github/           @Xerolux
+/Dockerfile         @Xerolux
+/docker-compose.yml @Xerolux
+/Makefile           @Xerolux
+
+# Installation
+/install.sh         @Xerolux
+/*.service          @Xerolux
+
+# Documentation
+/*.md               @Xerolux
+/docs/              @Xerolux

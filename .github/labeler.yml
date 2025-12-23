@@ -1,0 +1,71 @@
+# Labels configuration for automatic PR labeling
+
+# Areas
+api:
+  - pkg/api/**/*
+
+auth:
+  - pkg/auth/**/*
+
+config:
+  - pkg/config/**/*
+
+devices:
+  - pkg/devices/**/*
+
+logger:
+  - pkg/logger/**/*
+
+proxy:
+  - pkg/proxy/**/*
+
+manager:
+  - pkg/manager/**/*
+
+modbus:
+  - pkg/modbus/**/*
+
+web:
+  - pkg/web/**/*
+
+# File types
+documentation:
+  - '**/*.md'
+  - docs/**/*
+  - CONTRIBUTING.md
+  - LICENSE
+
+tests:
+  - '**/*_test.go'
+  - '**/test/**/*'
+
+ci/cd:
+  - .github/**/*
+  - Dockerfile
+  - docker-compose.yml
+  - Makefile
+
+dependencies:
+  - go.mod
+  - go.sum
+
+# Size labels
+size/XS:
+  - changed-files:
+    - 0-9
+
+size/S:
+  - changed-files:
+    - 10-29
+
+size/M:
+  - changed-files:
+    - 30-99
+
+size/L:
+  - changed-files:
+    - 100-499
+
+size/XL:
+  - changed-files:
+    - 500+

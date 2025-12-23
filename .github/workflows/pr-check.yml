@@ -1,0 +1,197 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main, master, develop ]
+    types: [ opened, synchronize, reopened ]
+
+jobs:
+  validate-pr:
+    name: Validate Pull Request
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+          requireScope: false
+        continue-on-error: true
+
+      - name: Check for large files
+        run: |
+          find . -type f -size +1M -not -path "./.git/*" -not -path "./vendor/*" | while read file; do
+            echo "⚠️ Large file detected: $file ($(du -h "$file" | cut -f1))"
+          done
+
+      - name: Validate JSON files
+        run: |
+          for file in $(find . -name "*.json" -not -path "./vendor/*" -not -path "./node_modules/*"); do
+            echo "Validating $file"
+            python3 -m json.tool "$file" > /dev/null || exit 1
+          done
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run go fmt
+        run: |
+          fmt_output=$(gofmt -l .)
+          if [ -n "$fmt_output" ]; then
+            echo "❌ The following files need formatting:"
+            echo "$fmt_output"
+            exit 1
+          fi
+          echo "✅ All files are properly formatted"
+
+      - name: Run go vet
+        run: go vet ./...
+
+      - name: Run staticcheck
+        uses: dominikh/staticcheck-action@v1
+        with:
+          version: "latest"
+          install-go: false
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout=5m
+
+      - name: Check for TODO/FIXME comments
+        run: |
+          if grep -r "TODO\|FIXME" --include="*.go" .; then
+            echo "⚠️ Warning: TODO/FIXME comments found in code"
+          fi
+        continue-on-error: true
+
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.21', '1.22', '1.23']
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Run tests
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: matrix.go-version == '1.23'
+        with:
+          file: ./coverage.txt
+          flags: unittests
+          name: codecov-umbrella
+
+      - name: Check test coverage
+        if: matrix.go-version == '1.23'
+        run: |
+          go tool cover -func=coverage.txt | tail -1 | awk '{print "Total coverage: " $3}'
+          coverage=$(go tool cover -func=coverage.txt | tail -1 | awk '{print $3}' | sed 's/%//')
+          if (( $(echo "$coverage < 50" | bc -l) )); then
+            echo "⚠️ Warning: Test coverage is below 50% ($coverage%)"
+          fi
+        continue-on-error: true
+
+  build:
+    name: Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+          cache: true
+
+      - name: Build for multiple platforms
+        run: |
+          echo "Building for Linux AMD64..."
+          GOOS=linux GOARCH=amd64 go build -v -o modbusmanager-linux-amd64 ./main.go
+
+          echo "Building for Linux ARM64..."
+          GOOS=linux GOARCH=arm64 go build -v -o modbusmanager-linux-arm64 ./main.go
+
+          echo "Building for Windows AMD64..."
+          GOOS=windows GOARCH=amd64 go build -v -o modbusmanager-windows-amd64.exe ./main.go
+
+          echo "Building for macOS AMD64..."
+          GOOS=darwin GOARCH=amd64 go build -v -o modbusmanager-darwin-amd64 ./main.go
+
+          echo "Building for macOS ARM64..."
+          GOOS=darwin GOARCH=arm64 go build -v -o modbusmanager-darwin-arm64 ./main.go
+
+      - name: Check binary sizes
+        run: |
+          echo "### Binary Size Report" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          ls -lh modbusmanager-* >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+  docker-build:
+    name: Docker Build Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: modbridge:pr-${{ github.event.pull_request.number }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
