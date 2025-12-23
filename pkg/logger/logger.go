@@ -30,8 +30,10 @@ type LogEntry struct {
 type Logger struct {
 	mu          sync.Mutex
 	file        *os.File
-	ringBuffer  []LogEntry
+	ringBuffer  []LogEntry // Fixed-size circular buffer
 	ringSize    int
+	ringHead    int        // Write position
+	ringCount   int        // Number of entries in buffer
 	subscribers map[chan LogEntry]struct{}
 }
 
@@ -44,8 +46,10 @@ func NewLogger(filePath string, bufferSize int) (*Logger, error) {
 
 	return &Logger{
 		file:        f,
-		ringBuffer:  make([]LogEntry, 0, bufferSize),
+		ringBuffer:  make([]LogEntry, bufferSize), // Pre-allocate full size
 		ringSize:    bufferSize,
+		ringHead:    0,
+		ringCount:   0,
 		subscribers: make(map[chan LogEntry]struct{}),
 	}, nil
 }
@@ -68,12 +72,12 @@ func (l *Logger) Log(level LogLevel, proxyID, msg string) {
 		_, _ = l.file.WriteString("\n")
 	}
 
-	// 2. Add to ring buffer
-	if len(l.ringBuffer) >= l.ringSize {
-		// Shift
-		l.ringBuffer = l.ringBuffer[1:]
+	// 2. Add to ring buffer (circular buffer, no allocations)
+	l.ringBuffer[l.ringHead] = entry
+	l.ringHead = (l.ringHead + 1) % l.ringSize
+	if l.ringCount < l.ringSize {
+		l.ringCount++
 	}
-	l.ringBuffer = append(l.ringBuffer, entry)
 
 	// 3. Broadcast to subscribers
 	for ch := range l.subscribers {
@@ -109,15 +113,37 @@ func (l *Logger) Unsubscribe(ch chan LogEntry) {
 func (l *Logger) GetRecent(limit int) []LogEntry {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	
-	if limit > len(l.ringBuffer) {
-		limit = len(l.ringBuffer)
+
+	if limit > l.ringCount {
+		limit = l.ringCount
 	}
-	
-	// Return a copy
+	if limit == 0 {
+		return []LogEntry{}
+	}
+
 	out := make([]LogEntry, limit)
-	start := len(l.ringBuffer) - limit
-	copy(out, l.ringBuffer[start:])
+
+	// Calculate start position (most recent entries)
+	// If buffer is not full, entries are at [0:ringCount]
+	// If buffer is full, entries wrap around with head pointing to oldest
+	if l.ringCount < l.ringSize {
+		// Buffer not full yet, just copy the last 'limit' entries
+		start := l.ringCount - limit
+		copy(out, l.ringBuffer[start:l.ringCount])
+	} else {
+		// Buffer is full, need to handle wrap-around
+		// Oldest entry is at ringHead, newest is at ringHead-1
+		start := (l.ringHead - limit + l.ringSize) % l.ringSize
+		if start < l.ringHead {
+			// No wrap-around needed
+			copy(out, l.ringBuffer[start:l.ringHead])
+		} else {
+			// Wrap-around: copy from start to end, then from 0 to ringHead
+			n := copy(out, l.ringBuffer[start:])
+			copy(out[n:], l.ringBuffer[:l.ringHead])
+		}
+	}
+
 	return out
 }
 
