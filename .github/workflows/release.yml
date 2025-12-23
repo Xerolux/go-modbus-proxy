@@ -45,7 +45,7 @@ jobs:
         GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o modbusmanager-darwin-arm64 ./main.go
 
     - name: Create Release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         files: |
           modbusmanager-linux-amd64
