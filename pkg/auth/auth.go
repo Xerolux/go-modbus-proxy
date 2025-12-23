@@ -93,3 +93,20 @@ func (a *Authenticator) Middleware(next http.HandlerFunc) http.HandlerFunc {
 		next(w, r)
 	}
 }
+
+// CleanupExpiredSessions periodically removes expired sessions.
+func (a *Authenticator) CleanupExpiredSessions() {
+	ticker := time.NewTicker(1 * time.Hour)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		a.mu.Lock()
+		now := time.Now()
+		for token, session := range a.sessions {
+			if now.After(session.ExpiresAt) {
+				delete(a.sessions, token)
+			}
+		}
+		a.mu.Unlock()
+	}
+}

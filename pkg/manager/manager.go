@@ -153,7 +153,7 @@ func (m *Manager) GetProxies() []map[string]interface{} {
 		if status.Status == "Running" {
 			uptime = time.Since(status.LastStart)
 		}
-		
+
 		res = append(res, map[string]interface{}{
 			"id":          p.ID,
 			"name":        p.Name,
@@ -166,4 +166,16 @@ func (m *Manager) GetProxies() []map[string]interface{} {
 		})
 	}
 	return res
+}
+
+// StopAll stops all running proxies.
+func (m *Manager) StopAll() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	for _, p := range m.proxies {
+		if p.Stats.Status == "Running" {
+			p.Stop()
+		}
+	}
 }

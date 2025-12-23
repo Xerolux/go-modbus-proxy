@@ -34,18 +34,44 @@ func NewServer(cfg *config.Manager, mgr *manager.Manager, a *auth.Authenticator,
 // Routes registers routes.
 func (s *Server) Routes(mux *http.ServeMux) {
 	// Public
-	mux.HandleFunc("/api/status", s.handleStatus)
-	mux.HandleFunc("/api/login", s.handleLogin)
-	mux.HandleFunc("/api/setup", s.handleSetup)
+	mux.HandleFunc("/api/health", s.handleHealth)
+	mux.HandleFunc("/api/status", s.corsMiddleware(s.handleStatus))
+	mux.HandleFunc("/api/login", s.corsMiddleware(s.handleLogin))
+	mux.HandleFunc("/api/setup", s.corsMiddleware(s.handleSetup))
 
 	// Protected
-	mux.HandleFunc("/api/proxies", s.auth.Middleware(s.handleProxies))
-	mux.HandleFunc("/api/proxies/control", s.auth.Middleware(s.handleProxyControl))
-	mux.HandleFunc("/api/logs", s.auth.Middleware(s.handleLogs))
-	mux.HandleFunc("/api/logs/download", s.auth.Middleware(s.handleLogDownload))
-	mux.HandleFunc("/api/logs/stream", s.auth.Middleware(s.handleLogStream))
-	mux.HandleFunc("/api/config/export", s.auth.Middleware(s.handleConfigExport))
-	mux.HandleFunc("/api/config/import", s.auth.Middleware(s.handleConfigImport))
+	mux.HandleFunc("/api/proxies", s.corsMiddleware(s.auth.Middleware(s.handleProxies)))
+	mux.HandleFunc("/api/proxies/control", s.corsMiddleware(s.auth.Middleware(s.handleProxyControl)))
+	mux.HandleFunc("/api/logs", s.corsMiddleware(s.auth.Middleware(s.handleLogs)))
+	mux.HandleFunc("/api/logs/download", s.corsMiddleware(s.auth.Middleware(s.handleLogDownload)))
+	mux.HandleFunc("/api/logs/stream", s.corsMiddleware(s.auth.Middleware(s.handleLogStream)))
+	mux.HandleFunc("/api/config/export", s.corsMiddleware(s.auth.Middleware(s.handleConfigExport)))
+	mux.HandleFunc("/api/config/import", s.corsMiddleware(s.auth.Middleware(s.handleConfigImport)))
+}
+
+// corsMiddleware adds CORS headers to responses.
+func (s *Server) corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Max-Age", "3600")
+
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+
+		next(w, r)
+	}
+}
+
+// handleHealth is a health check endpoint.
+func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"status": "ok",
+	})
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {

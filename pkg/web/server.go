@@ -33,7 +33,7 @@ func (s *Server) Start() {
 	mux.HandleFunc("/api/config", s.handleConfig)
 	mux.HandleFunc("/api/status", s.handleStatus)
 
-	addr := s.cfgManager.Get().WebAddr
+	addr := s.cfgManager.Get().WebPort
 	log.Printf("Web interface listening on %s", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		log.Fatalf("Web server error: %v", err)
@@ -60,7 +60,10 @@ func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if err := s.cfgManager.Update(newConfig); err != nil {
+		if err := s.cfgManager.Update(func(c *config.Config) error {
+			*c = newConfig
+			return nil
+		}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  modbus-proxy:
+    build: .
+    container_name: modbus-proxy-manager
+    ports:
+      - "8080:8080"
+      - "5020-5030:5020-5030"  # Modbus proxy ports
+    volumes:
+      - ./config.json:/app/config.json
+      - ./logs:/app/data
+    environment:
+      - WEB_PORT=:8080
+      - LOG_LEVEL=INFO
+    restart: unless-stopped
+    networks:
+      - modbus-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+networks:
+  modbus-network:
+    driver: bridge

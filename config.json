@@ -4,17 +4,10 @@
   "proxies": [
     {
       "id": "21e71152-3866-43ac-891d-c5ec85fa1e98",
-      "name": "Test-Proxy-UI",
-      "listen_addr": ":5555",
+      "name": "Test-Proxy",
+      "listen_addr": ":5020",
       "target_addr": "127.0.0.1:502",
-      "enabled": true
-    },
-    {
-      "id": "cdd183c1-211f-4903-8009-6835ca43feeb",
-      "name": "Test-Proxy-UI",
-      "listen_addr": ":5555",
-      "target_addr": "127.0.0.1:502",
-      "enabled": true
+      "enabled": false
     }
   ]
 }
