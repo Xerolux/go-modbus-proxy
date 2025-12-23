@@ -1,0 +1,84 @@
+name: Roadmap Item Suggestion
+description: Suggest an item for the project roadmap
+title: "[Roadmap]: "
+labels: ["roadmap", "discussion"]
+assignees:
+  - Xerolux
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggest a feature or improvement for the modbridge roadmap.
+
+  - type: dropdown
+    id: phase
+    attributes:
+      label: Roadmap Phase
+      description: Which phase does this belong to?
+      options:
+        - Phase 1 - Performance & Optimization
+        - Phase 2 - Observability & Monitoring
+        - Phase 3 - Web UI Modernization
+        - Phase 4 - Reliability & Resilience
+        - Phase 5 - Advanced Modbus Features
+        - Phase 6 - Developer Experience
+        - Phase 7 - Cloud-Native & Kubernetes
+        - Phase 8 - Scale & Distribution
+        - Quick Wins
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the roadmap item
+    validations:
+      required: true
+
+  - type: dropdown
+    id: impact
+    attributes:
+      label: Expected Impact
+      description: How much impact will this have?
+      options:
+        - High - Game changer
+        - Medium - Significant improvement
+        - Low - Nice to have
+    validations:
+      required: true
+
+  - type: dropdown
+    id: effort
+    attributes:
+      label: Estimated Effort
+      description: How much effort is needed?
+      options:
+        - Low - Few hours/days
+        - Medium - 1-2 weeks
+        - High - Multiple weeks
+    validations:
+      required: true
+
+  - type: textarea
+    id: benefits
+    attributes:
+      label: Benefits
+      description: What are the benefits of implementing this?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: What alternatives did you consider?
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      options:
+        - label: I'm willing to contribute to this
+          required: false
