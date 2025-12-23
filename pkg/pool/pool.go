@@ -27,6 +27,8 @@ type Config struct {
 	AcquireTimeout time.Duration
 	// Dialer function
 	Dialer func(context.Context) (net.Conn, error)
+	// HealthChecker function to verify connection health (optional)
+	HealthChecker func(net.Conn) error
 }
 
 // Pool is a connection pool.
@@ -34,6 +36,7 @@ type Pool struct {
 	mu      sync.Mutex
 	conns   chan *poolConn
 	factory func(context.Context) (net.Conn, error)
+	healthChecker func(net.Conn) error
 
 	maxIdleTime    time.Duration
 	acquireTimeout time.Duration
@@ -67,6 +70,7 @@ func NewPool(cfg Config) (*Pool, error) {
 	p := &Pool{
 		conns:          make(chan *poolConn, cfg.MaxSize),
 		factory:        cfg.Dialer,
+		healthChecker:  cfg.HealthChecker,
 		maxIdleTime:    cfg.MaxIdleTime,
 		acquireTimeout: cfg.AcquireTimeout,
 		maxSize:        cfg.MaxSize,
@@ -123,13 +127,25 @@ func (p *Pool) Get(ctx context.Context) (net.Conn, error) {
 		case <-timer.C:
 			return nil, ErrPoolExhausted
 		case pc := <-p.conns:
-			// Check if connection is still valid
+			// Check if connection is still valid (idle time)
 			if time.Since(pc.lastUsed) > p.maxIdleTime {
 				pc.conn.Close()
 				p.mu.Lock()
 				p.size--
 				p.mu.Unlock()
 				continue
+			}
+
+			// Perform health check if configured
+			if p.healthChecker != nil {
+				if err := p.healthChecker(pc.conn); err != nil {
+					// Connection failed health check, close it
+					pc.conn.Close()
+					p.mu.Lock()
+					p.size--
+					p.mu.Unlock()
+					continue
+				}
 			}
 
 			pc.inUse = true

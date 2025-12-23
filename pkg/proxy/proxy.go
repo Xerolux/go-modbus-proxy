@@ -8,6 +8,7 @@ import (
 	"modbusproxy/pkg/modbus"
 	"modbusproxy/pkg/pool"
 	"net"
+	"syscall"
 	"time"
 )
 
@@ -19,6 +20,41 @@ type PoolConfig struct {
 	MaxIdleTime        time.Duration
 	KeepAlive          bool
 	HealthCheckInterval time.Duration
+}
+
+// healthCheck verifies a connection is still alive by checking socket state.
+func healthCheck(conn net.Conn) error {
+	// Try to set a deadline to verify socket is still valid
+	if err := conn.SetDeadline(time.Now().Add(1 * time.Second)); err != nil {
+		return err
+	}
+
+	// For TCP connections, we can check if the socket is still open
+	// by examining the underlying file descriptor
+	if tcpConn, ok := conn.(*net.TCPConn); ok {
+		// Use SyscallConn to check socket state without actually reading/writing
+		rawConn, err := tcpConn.SyscallConn()
+		if err != nil {
+			return err
+		}
+
+		var sysErr error
+		err = rawConn.Control(func(fd uintptr) {
+			// Try to get socket error state
+			_, sysErr = syscall.GetsockoptInt(int(fd), syscall.SOL_SOCKET, syscall.SO_ERROR)
+		})
+
+		if err != nil {
+			return err
+		}
+		if sysErr != nil {
+			return sysErr
+		}
+	}
+
+	// Reset deadline
+	_ = conn.SetDeadline(time.Time{})
+	return nil
 }
 
 // ProxyInstance represents a running proxy.
@@ -111,6 +147,7 @@ func (p *ProxyInstance) Start() error {
 			}
 			return d.DialContext(ctx, "tcp", p.TargetAddr)
 		},
+		HealthChecker: healthCheck,
 	}
 
 	p.pool, err = pool.NewPool(poolCfg)
