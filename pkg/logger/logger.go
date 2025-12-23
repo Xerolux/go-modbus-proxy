@@ -63,9 +63,10 @@ func (l *Logger) Log(level LogLevel, proxyID, msg string) {
 	defer l.mu.Unlock()
 
 	// 1. Write to file
-	jsonBytes, _ := json.Marshal(entry)
-	l.file.Write(jsonBytes)
-	l.file.WriteString("\n")
+	if jsonBytes, err := json.Marshal(entry); err == nil {
+		_, _ = l.file.Write(jsonBytes)
+		_, _ = l.file.WriteString("\n")
+	}
 
 	// 2. Add to ring buffer
 	if len(l.ringBuffer) >= l.ringSize {

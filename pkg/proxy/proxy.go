@@ -3,6 +3,7 @@ package proxy
 import (
 	"context"
 	"io"
+	"modbusproxy/pkg/devices"
 	"modbusproxy/pkg/logger"
 	"modbusproxy/pkg/modbus"
 	"net"
@@ -16,16 +17,17 @@ type ProxyInstance struct {
 	Name       string
 	ListenAddr string
 	TargetAddr string
-	
-	listener   net.Listener
-	targetConn net.Conn
-	targetMu   sync.Mutex
-	
-	log        *logger.Logger
-	ctx        context.Context
-	cancel     context.CancelFunc
-	
-	Stats      Stats
+
+	listener      net.Listener
+	targetConn    net.Conn
+	targetMu      sync.Mutex
+
+	log           *logger.Logger
+	deviceTracker *devices.Tracker
+	ctx           context.Context
+	cancel        context.CancelFunc
+
+	Stats         Stats
 }
 
 type Stats struct {
@@ -37,14 +39,15 @@ type Stats struct {
 }
 
 // NewProxyInstance creates a new proxy.
-func NewProxyInstance(id, name, listen, target string, l *logger.Logger) *ProxyInstance {
+func NewProxyInstance(id, name, listen, target string, l *logger.Logger, tracker *devices.Tracker) *ProxyInstance {
 	return &ProxyInstance{
-		ID:         id,
-		Name:       name,
-		ListenAddr: listen,
-		TargetAddr: target,
-		log:        l,
-		Stats:      Stats{Status: "Stopped"},
+		ID:            id,
+		Name:          name,
+		ListenAddr:    listen,
+		TargetAddr:    target,
+		log:           l,
+		deviceTracker: tracker,
+		Stats:         Stats{Status: "Stopped"},
 	}
 }
 
@@ -107,7 +110,12 @@ func (p *ProxyInstance) acceptLoop() {
 
 func (p *ProxyInstance) handleClient(clientConn net.Conn) {
 	defer clientConn.Close()
-	
+
+	// Track the device connection
+	if p.deviceTracker != nil {
+		p.deviceTracker.TrackConnection(clientConn, p.ID)
+	}
+
 	for {
 		// Check context
 		select {
@@ -116,7 +124,7 @@ func (p *ProxyInstance) handleClient(clientConn net.Conn) {
 		default:
 		}
 
-		clientConn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		_ = clientConn.SetReadDeadline(time.Now().Add(60 * time.Second))
 		reqFrame, err := modbus.ReadFrame(clientConn)
 		if err != nil {
 			if err != io.EOF {
@@ -148,20 +156,20 @@ func (p *ProxyInstance) forwardRequest(req []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	p.targetConn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+	_ = p.targetConn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 	if _, err := p.targetConn.Write(req); err != nil {
 		p.closeTargetConn()
 		if err := p.ensureTargetConn(); err != nil {
 			return nil, err
 		}
-		p.targetConn.SetWriteDeadline(time.Now().Add(5 * time.Second))
+		_ = p.targetConn.SetWriteDeadline(time.Now().Add(5 * time.Second))
 		if _, err := p.targetConn.Write(req); err != nil {
 			p.closeTargetConn()
 			return nil, err
 		}
 	}
 
-	p.targetConn.SetReadDeadline(time.Now().Add(5 * time.Second))
+	_ = p.targetConn.SetReadDeadline(time.Now().Add(5 * time.Second))
 	resp, err := modbus.ReadFrame(p.targetConn)
 	if err != nil {
 		p.closeTargetConn()

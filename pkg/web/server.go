@@ -46,13 +46,13 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	tmpl.Execute(w, nil)
+	_ = tmpl.Execute(w, nil)
 }
 
 func (s *Server) handleConfig(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		cfg := s.cfgManager.Get()
-		json.NewEncoder(w).Encode(cfg)
+		_ = json.NewEncoder(w).Encode(cfg)
 	} else if r.Method == http.MethodPost {
 		var newConfig config.Config
 		if err := json.NewDecoder(r.Body).Decode(&newConfig); err != nil {
@@ -80,5 +80,5 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 	status := map[string]string{
 		"status": "Running",
 	}
-	json.NewEncoder(w).Encode(status)
+	_ = json.NewEncoder(w).Encode(status)
 }

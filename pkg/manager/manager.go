@@ -3,6 +3,7 @@ package manager
 import (
 	"fmt"
 	"modbusproxy/pkg/config"
+	"modbusproxy/pkg/devices"
 	"modbusproxy/pkg/logger"
 	"modbusproxy/pkg/proxy"
 	"sync"
@@ -11,18 +12,20 @@ import (
 
 // Manager manages proxies.
 type Manager struct {
-	mu      sync.RWMutex
-	proxies map[string]*proxy.ProxyInstance
-	cfgMgr  *config.Manager
-	log     *logger.Logger
+	mu            sync.RWMutex
+	proxies       map[string]*proxy.ProxyInstance
+	cfgMgr        *config.Manager
+	log           *logger.Logger
+	deviceTracker *devices.Tracker
 }
 
 // NewManager creates a manager.
 func NewManager(cfgMgr *config.Manager, log *logger.Logger) *Manager {
 	m := &Manager{
-		proxies: make(map[string]*proxy.ProxyInstance),
-		cfgMgr:  cfgMgr,
-		log:     log,
+		proxies:       make(map[string]*proxy.ProxyInstance),
+		cfgMgr:        cfgMgr,
+		log:           log,
+		deviceTracker: devices.NewTracker(),
 	}
 	return m
 }
@@ -48,7 +51,7 @@ func (m *Manager) AddProxy(cfg config.ProxyConfig, save bool) error {
 		old.Stop()
 	}
 
-	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, m.log)
+	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, m.log, m.deviceTracker)
 	m.proxies[cfg.ID] = p
 
 	if save {
@@ -178,4 +181,14 @@ func (m *Manager) StopAll() {
 			p.Stop()
 		}
 	}
+}
+
+// GetDevices returns all tracked devices.
+func (m *Manager) GetDevices() []devices.Device {
+	return m.deviceTracker.GetDevices()
+}
+
+// SetDeviceName sets a user-friendly name for a device.
+func (m *Manager) SetDeviceName(ip, name string) error {
+	return m.deviceTracker.SetDeviceName(ip, name)
 }

@@ -42,6 +42,7 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	// Protected
 	mux.HandleFunc("/api/proxies", s.corsMiddleware(s.auth.Middleware(s.handleProxies)))
 	mux.HandleFunc("/api/proxies/control", s.corsMiddleware(s.auth.Middleware(s.handleProxyControl)))
+	mux.HandleFunc("/api/devices", s.corsMiddleware(s.auth.Middleware(s.handleDevices)))
 	mux.HandleFunc("/api/logs", s.corsMiddleware(s.auth.Middleware(s.handleLogs)))
 	mux.HandleFunc("/api/logs/download", s.corsMiddleware(s.auth.Middleware(s.handleLogDownload)))
 	mux.HandleFunc("/api/logs/stream", s.corsMiddleware(s.auth.Middleware(s.handleLogStream)))
@@ -69,7 +70,7 @@ func (s *Server) corsMiddleware(next http.HandlerFunc) http.HandlerFunc {
 // handleHealth is a health check endpoint.
 func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{
+	_ = json.NewEncoder(w).Encode(map[string]string{
 		"status": "ok",
 	})
 }
@@ -80,7 +81,7 @@ func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
 		"setup_required": cfg.AdminPassHash == "",
 		"proxies":        s.mgr.GetProxies(),
 	}
-	json.NewEncoder(w).Encode(status)
+	_ = json.NewEncoder(w).Encode(status)
 }
 
 func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
@@ -109,7 +110,7 @@ func (s *Server) handleSetup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.cfgMgr.Update(func(c *config.Config) error {
+	_ = s.cfgMgr.Update(func(c *config.Config) error {
 		c.AdminPassHash = hash
 		return nil
 	})
@@ -155,7 +156,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleProxies(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
-		json.NewEncoder(w).Encode(s.mgr.GetProxies())
+		_ = json.NewEncoder(w).Encode(s.mgr.GetProxies())
 		return
 	}
 
@@ -176,7 +177,7 @@ func (s *Server) handleProxies(w http.ResponseWriter, r *http.Request) {
 		
 		// If enabled, start it
 		if req.Enabled {
-			s.mgr.StartProxy(req.ID)
+			_ = s.mgr.StartProxy(req.ID)
 		}
 		
 		w.WriteHeader(http.StatusOK)
@@ -216,7 +217,7 @@ func (s *Server) handleProxyControl(w http.ResponseWriter, r *http.Request) {
 	case "stop":
 		err = s.mgr.StopProxy(req.ID)
 	case "restart":
-		s.mgr.StopProxy(req.ID)
+		_ = s.mgr.StopProxy(req.ID)
 		time.Sleep(100 * time.Millisecond)
 		err = s.mgr.StartProxy(req.ID)
 	default:
@@ -232,7 +233,7 @@ func (s *Server) handleProxyControl(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleLogs(w http.ResponseWriter, r *http.Request) {
 	logs := s.log.GetRecent(100)
-	json.NewEncoder(w).Encode(logs)
+	_ = json.NewEncoder(w).Encode(logs)
 }
 
 func (s *Server) handleLogStream(w http.ResponseWriter, r *http.Request) {

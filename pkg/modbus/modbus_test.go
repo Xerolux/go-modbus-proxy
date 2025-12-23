@@ -16,11 +16,11 @@ func TestReadFrame(t *testing.T) {
 	length := uint16(1 + len(pdu))              // UnitID + PDU
 
 	buf := new(bytes.Buffer)
-	binary.Write(buf, binary.BigEndian, transID)
-	binary.Write(buf, binary.BigEndian, protoID)
-	binary.Write(buf, binary.BigEndian, length)
-	buf.WriteByte(unitID)
-	buf.Write(pdu)
+	_ = binary.Write(buf, binary.BigEndian, transID)
+	_ = binary.Write(buf, binary.BigEndian, protoID)
+	_ = binary.Write(buf, binary.BigEndian, length)
+	_ = buf.WriteByte(unitID)
+	_, _ = buf.Write(pdu)
 
 	frame, err := ReadFrame(buf)
 	if err != nil {
