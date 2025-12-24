@@ -1,0 +1,279 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: modbridge
+  namespace: modbridge
+  labels:
+    app: modbridge
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: modbridge
+  template:
+    metadata:
+      labels:
+        app: modbridge
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: modbridge
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+
+      initContainers:
+      - name: config-validator
+        image: modbridge:v1.0.0
+        command: ["modbusctl", "validate", "config", "-f", "/config/config.json"]
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
+
+      containers:
+      - name: modbridge
+        image: modbridge:v1.0.0
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: modbus-5020
+          containerPort: 5020
+          protocol: TCP
+        - name: modbus-5021
+          containerPort: 5021
+          protocol: TCP
+
+        env:
+        - name: MODBRIDGE_WEB_PORT
+          value: ":8080"
+        - name: MODBRIDGE_LOG_LEVEL
+          value: "info"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "1000m"
+
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+
+        lifecycle:
+          preStop:
+            httpGet:
+              path: /shutdown
+              port: 8080
+
+        volumeMounts:
+        - name: config
+          mountPath: /config
+          readOnly: true
+        - name: data
+          mountPath: /data
+
+      volumes:
+      - name: config
+        configMap:
+          name: modbridge-config
+      - name: data
+        emptyDir: {}
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - modbridge
+              topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modbridge
+  namespace: modbridge
+  labels:
+    app: modbridge
+spec:
+  type: ClusterIP
+  selector:
+    app: modbridge
+  ports:
+  - name: http
+    port: 8080
+    targetPort: 8080
+    protocol: TCP
+  - name: modbus-5020
+    port: 5020
+    targetPort: 5020
+    protocol: TCP
+  - name: modbus-5021
+    port: 5021
+    targetPort: 5021
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: modbridge-loadbalancer
+  namespace: modbridge
+  labels:
+    app: modbridge
+spec:
+  type: LoadBalancer
+  selector:
+    app: modbridge
+  ports:
+  - name: modbus-5020
+    port: 5020
+    targetPort: 5020
+    protocol: TCP
+  - name: modbus-5021
+    port: 5021
+    targetPort: 5021
+    protocol: TCP
+  sessionAffinity: ClientIP
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: modbridge-config
+  namespace: modbridge
+data:
+  config.json: |
+    {
+      "web_port": ":8080",
+      "proxies": [
+        {
+          "id": "plc-gateway",
+          "name": "PLC Gateway",
+          "listen_addr": ":5020",
+          "target_addr": "192.168.1.10:502",
+          "enabled": true,
+          "pool_size": 20,
+          "pool_min_size": 5
+        },
+        {
+          "id": "scada-proxy",
+          "name": "SCADA Proxy",
+          "listen_addr": ":5021",
+          "target_addr": "10.0.0.5:502",
+          "enabled": true,
+          "pool_size": 15,
+          "pool_min_size": 3
+        }
+      ]
+    }
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: modbridge
+  namespace: modbridge
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: modbridge-hpa
+  namespace: modbridge
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: modbridge
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Pods
+        value: 1
+        periodSeconds: 60
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: modbridge-pdb
+  namespace: modbridge
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: modbridge

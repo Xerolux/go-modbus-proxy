@@ -1,28 +1,134 @@
 version: '3.8'
 
 services:
-  modbus-proxy:
-    build: .
-    container_name: modbus-proxy-manager
-    ports:
-      - "8080:8080"
-      - "5020-5030:5020-5030"  # Modbus proxy ports
-    volumes:
-      - ./config.json:/app/config.json
-      - ./logs:/app/data
-    environment:
-      - WEB_PORT=:8080
-      - LOG_LEVEL=INFO
+  modbridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: modbridge:latest
+    container_name: modbridge
+    hostname: modbridge
     restart: unless-stopped
+    
+    ports:
+      - "8080:8080"    # HTTP API
+      - "5020:5020"    # Modbus proxy 1
+      - "5021:5021"    # Modbus proxy 2
+    
+    environment:
+      - MODBRIDGE_WEB_PORT=:8080
+      - MODBRIDGE_LOG_LEVEL=info
+      - MODBRIDGE_PROXY_COUNT=2
+      - MODBRIDGE_PROXY_0_ID=plc-gateway
+      - MODBRIDGE_PROXY_0_NAME=PLC Gateway
+      - MODBRIDGE_PROXY_0_LISTEN=:5020
+      - MODBRIDGE_PROXY_0_TARGET=192.168.1.10:502
+      - MODBRIDGE_PROXY_0_ENABLED=true
+      - MODBRIDGE_PROXY_1_ID=scada-proxy
+      - MODBRIDGE_PROXY_1_NAME=SCADA Proxy
+      - MODBRIDGE_PROXY_1_LISTEN=:5021
+      - MODBRIDGE_PROXY_1_TARGET=10.0.0.5:502
+      - MODBRIDGE_PROXY_1_ENABLED=true
+    
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - modbridge-data:/data
+    
     networks:
-      - modbus-network
+      - modbridge-net
+    
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
+      test: ["CMD", "modbusctl", "metrics", "health", "--api-url", "http://localhost:8080"]
       interval: 30s
-      timeout: 3s
+      timeout: 5s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+    
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.1'
+          memory: 128M
+
+  # Optional: InfluxDB for metrics
+  influxdb:
+    image: influxdb:2.7-alpine
+    container_name: modbridge-influxdb
+    restart: unless-stopped
+    
+    ports:
+      - "8086:8086"
+    
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=adminpassword
+      - DOCKER_INFLUXDB_INIT_ORG=modbridge
+      - DOCKER_INFLUXDB_INIT_BUCKET=modbridge
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=modbridge-token
+    
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+    
+    networks:
+      - modbridge-net
+
+  # Optional: Grafana for visualization
+  grafana:
+    image: grafana/grafana:10.2.2
+    container_name: modbridge-grafana
+    restart: unless-stopped
+    
+    ports:
+      - "3000:3000"
+    
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=
+    
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./deployments/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./deployments/grafana/datasources:/etc/grafana/provisioning/datasources
+    
+    networks:
+      - modbridge-net
+    
+    depends_on:
+      - influxdb
+
+  # Optional: MQTT Broker for IoT integration
+  mosquitto:
+    image: eclipse-mosquitto:2.0-openssl
+    container_name: modbridge-mqtt
+    restart: unless-stopped
+    
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    
+    volumes:
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-logs:/mosquitto/log
+      - ./deployments/mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+    
+    networks:
+      - modbridge-net
 
 networks:
-  modbus-network:
+  modbridge-net:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
+
+volumes:
+  modbridge-data:
+  influxdb-data:
+  grafana-data:
+  mosquitto-data:
+  mosquitto-logs:
