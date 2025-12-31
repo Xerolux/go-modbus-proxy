@@ -1082,6 +1082,23 @@ make test
 make run
 ```
 
+### Release erstellen
+
+**Automatisches Release-Script** (empfohlen):
+
+```bash
+# Interaktives Release-Script
+./release.sh
+```
+
+Das Script fragt nach:
+- Versionsnummer (z.B. 0.2.0)
+- Release-Typ (Stable, Beta, RC, Draft)
+- Aktualisiert automatisch alle Dateien
+- Erstellt Git Tag und pusht zu GitHub
+
+**Details**: Siehe [RELEASE.md](RELEASE.md)
+
 ### Tests
 
 ```bash
