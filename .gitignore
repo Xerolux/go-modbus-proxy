@@ -37,3 +37,6 @@ proxy.log
 # Temporary files
 tmp/
 temp/
+
+# Build artifacts
+build/

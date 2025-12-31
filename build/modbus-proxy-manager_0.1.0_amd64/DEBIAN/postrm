@@ -1,0 +1,22 @@
+#!/bin/bash
+set -e
+
+# Reload systemd daemon
+systemctl daemon-reload
+
+if [ "$1" = "purge" ]; then
+    # Remove user (only if purge)
+    if id "modbusmanager" &>/dev/null; then
+        echo "Removing modbusmanager user..."
+        userdel modbusmanager || true
+    fi
+
+    # Remove data and logs (only if purge)
+    echo "Removing data and log directories..."
+    rm -rf /var/lib/modbusmanager
+    rm -rf /var/log/modbusmanager
+
+    echo "Modbus Proxy Manager completely removed."
+fi
+
+exit 0

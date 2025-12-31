@@ -1,0 +1,59 @@
+#!/bin/bash
+set -e
+
+# Create system user if doesn't exist
+if ! id "modbusmanager" &>/dev/null; then
+    useradd --system --no-create-home --shell /bin/false modbusmanager
+fi
+
+# Create directories if they don't exist
+mkdir -p /var/lib/modbusmanager
+mkdir -p /var/log/modbusmanager
+
+# Set ownership
+chown -R modbusmanager:modbusmanager /opt/modbusmanager
+chown -R modbusmanager:modbusmanager /var/lib/modbusmanager
+chown -R modbusmanager:modbusmanager /var/log/modbusmanager
+
+# Create default config if doesn't exist
+if [ ! -f /var/lib/modbusmanager/config.json ]; then
+    cat > /var/lib/modbusmanager/config.json <<'EOF'
+{
+  "web_port": ":8080",
+  "admin_pass_hash": "",
+  "proxies": []
+}
+EOF
+    chown modbusmanager:modbusmanager /var/lib/modbusmanager/config.json
+    chmod 640 /var/lib/modbusmanager/config.json
+fi
+
+# Reload systemd daemon
+systemctl daemon-reload
+
+# Enable service (but don't start automatically)
+systemctl enable modbusmanager.service
+
+echo ""
+echo "======================================"
+echo "Modbus Proxy Manager installed successfully!"
+echo "======================================"
+echo ""
+echo "To start the service:"
+echo "  sudo systemctl start modbusmanager"
+echo ""
+echo "Web Interface will be available at:"
+echo "  http://localhost:8080"
+echo ""
+echo "Useful commands:"
+echo "  sudo systemctl status modbusmanager    - Check status"
+echo "  sudo systemctl start modbusmanager     - Start service"
+echo "  sudo systemctl stop modbusmanager      - Stop service"
+echo "  sudo systemctl restart modbusmanager   - Restart service"
+echo "  sudo journalctl -u modbusmanager -f    - View logs"
+echo ""
+echo "Configuration: /var/lib/modbusmanager/config.json"
+echo "Logs: /var/log/modbusmanager/"
+echo ""
+
+exit 0

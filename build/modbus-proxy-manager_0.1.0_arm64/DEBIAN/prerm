@@ -1,0 +1,16 @@
+#!/bin/bash
+set -e
+
+# Stop service if running
+if systemctl is-active --quiet modbusmanager; then
+    echo "Stopping modbusmanager service..."
+    systemctl stop modbusmanager
+fi
+
+# Disable service
+if systemctl is-enabled --quiet modbusmanager; then
+    echo "Disabling modbusmanager service..."
+    systemctl disable modbusmanager
+fi
+
+exit 0

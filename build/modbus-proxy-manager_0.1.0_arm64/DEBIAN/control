@@ -1,0 +1,27 @@
+Package: modbus-proxy-manager
+Version: 0.1.0
+Section: net
+Priority: optional
+Architecture: arm64
+Maintainer: Xerolux <xerolux@github.com>
+Homepage: https://github.com/Xerolux/modbridge
+Description: Modern Modbus TCP Proxy Manager with Web Interface
+ ModBridge is a modern, robust Modbus TCP proxy manager with an elegant
+ web interface. It enables the management of multiple Modbus TCP proxy
+ instances through a central web interface.
+ .
+ Key Features:
+  - Multi-proxy support: Manage multiple Modbus TCP proxy instances
+  - Web interface: Modern, responsive UI (embedded in binary)
+  - Real-time monitoring: Live traffic logging via Server-Sent Events
+  - Security: Admin authentication with bcrypt hashing
+  - Persistence: JSON-based configuration with export/import
+  - Single binary: Entire frontend embedded in Go binary
+  - Graceful shutdown: Clean shutdown of all proxy instances
+  - Health checks: Integrated health checks for container environments
+ .
+ Performance:
+  - Latency (avg): ~3-5ms
+  - Throughput: ~10,000 req/s
+  - Memory (idle): ~8MB
+Depends: systemd, adduser

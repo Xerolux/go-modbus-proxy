@@ -9,10 +9,11 @@ Ein moderner, robuster Modbus TCP Proxy Manager mit einer eleganten Web-Oberflä
 - [Features](#features)
 - [Systemanforderungen](#systemanforderungen)
 - [Installation](#installation)
-  - [Methode 1: Docker (Empfohlen)](#methode-1-docker-empfohlen)
-  - [Methode 2: Aus Quellcode kompilieren](#methode-2-aus-quellcode-kompilieren)
-  - [Methode 3: Systemd Service Installation](#methode-3-systemd-service-installation)
-  - [Methode 4: Mit Makefile](#methode-4-mit-makefile)
+  - [Methode 1: Debian/Ubuntu Paket (.deb)](#methode-1-debianubuntu-paket-deb---einfachste-installation)
+  - [Methode 2: Docker](#methode-2-docker)
+  - [Methode 3: Aus Quellcode kompilieren](#methode-3-aus-quellcode-kompilieren)
+  - [Methode 4: Systemd Service Installation](#methode-4-systemd-service-installation)
+  - [Methode 5: Mit Makefile](#methode-5-mit-makefile)
 - [Konfiguration](#konfiguration)
 - [Verwendung](#verwendung)
 - [Umgebungsvariablen](#umgebungsvariablen)
@@ -72,9 +73,54 @@ Ein moderner, robuster Modbus TCP Proxy Manager mit einer eleganten Web-Oberflä
 
 ## Installation
 
-### Methode 1: Docker (Empfohlen)
+### Methode 1: Debian/Ubuntu Paket (.deb) - Einfachste Installation
 
-Docker ist die einfachste und empfohlene Installationsmethode.
+Die schnellste Methode für Debian und Ubuntu Systeme.
+
+#### Voraussetzungen
+- Debian 11+, Ubuntu 20.04+ oder andere Debian-basierte Distribution
+- systemd
+
+#### Installation
+
+1. **Paket herunterladen**:
+   ```bash
+   # Für AMD64 (x86_64)
+   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_amd64.deb
+
+   # Für ARM64 (Raspberry Pi 64-bit)
+   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_arm64.deb
+   ```
+
+2. **Paket installieren**:
+   ```bash
+   # Für AMD64
+   sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
+
+   # Für ARM64
+   sudo dpkg -i modbus-proxy-manager_0.1.0_arm64.deb
+
+   # Falls Abhängigkeiten fehlen
+   sudo apt-get install -f
+   ```
+
+3. **Service starten**:
+   ```bash
+   sudo systemctl start modbusmanager
+   ```
+
+4. **Web-Interface öffnen**:
+   ```
+   http://localhost:8080
+   ```
+
+**Detaillierte Anleitung**: Siehe [INSTALL_DEBIAN.md](INSTALL_DEBIAN.md)
+
+---
+
+### Methode 2: Docker
+
+Docker ist eine plattformunabhängige Installationsmethode.
 
 #### Mit Docker Compose
 
@@ -140,7 +186,7 @@ Docker ist die einfachste und empfohlene Installationsmethode.
 
 ---
 
-### Methode 2: Aus Quellcode kompilieren
+### Methode 3: Aus Quellcode kompilieren
 
 Für Entwicklung oder wenn Docker nicht verfügbar ist.
 
@@ -210,7 +256,7 @@ go build -ldflags="-s -w" -o modbusmanager main.go
 
 ---
 
-### Methode 3: Systemd Service Installation
+### Methode 4: Systemd Service Installation
 
 Für produktive Linux-Server mit systemd.
 
@@ -321,7 +367,7 @@ sudo systemctl restart modbusmanager
 
 ---
 
-### Methode 4: Mit Makefile
+### Methode 5: Mit Makefile
 
 Für Entwickler, die häufig kompilieren und testen.
 

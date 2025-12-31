@@ -1,0 +1,35 @@
+[Unit]
+Description=Modbus Proxy Manager
+Documentation=https://github.com/Xerolux/go-modbus-proxy
+After=network.target
+
+[Service]
+Type=simple
+User=modbusmanager
+Group=modbusmanager
+WorkingDirectory=/var/lib/modbusmanager
+ExecStart=/opt/modbusmanager/modbusmanager
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/modbusmanager /var/log/modbusmanager
+
+# Environment variables
+Environment="WEB_PORT=:8080"
+
+# Resource limits
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=modbusmanager
+
+[Install]
+WantedBy=multi-user.target
