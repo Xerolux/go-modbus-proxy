@@ -12,7 +12,9 @@
       "Bash(if [ -f modbusmanager.service ])",
       "Bash(then mv modbusmanager.service modbridge.service)",
       "Bash(fi)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

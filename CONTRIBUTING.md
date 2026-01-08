@@ -7,8 +7,8 @@ Thank you for your interest in contributing to Modbus Proxy Manager! This docume
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/yourusername/modbus-proxy-manager.git
-   cd modbus-proxy-manager
+   git clone https://github.com/yourusername/modbridge.git
+   cd modbridge
    ```
 3. **Create a branch** for your changes:
    ```bash

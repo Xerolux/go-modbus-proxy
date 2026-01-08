@@ -29,12 +29,12 @@ Die einfachste Methode zur Installation von ModBridge auf Debian oder Ubuntu.
 ## Verfügbare Pakete
 
 ### AMD64 (x86_64)
-- **Datei**: `modbus-proxy-manager_0.1.0_amd64.deb`
+- **Datei**: `modbridge_0.1.0_amd64.deb`
 - **Größe**: ~2.4 MB
 - **Für**: Desktop-PCs, Server, Intel/AMD-Prozessoren
 
 ### ARM64 (aarch64)
-- **Datei**: `modbus-proxy-manager_0.1.0_arm64.deb`
+- **Datei**: `modbridge_0.1.0_arm64.deb`
 - **Größe**: ~2.1 MB
 - **Für**: Raspberry Pi 4/5 (64-bit), ARM-Server
 
@@ -46,10 +46,10 @@ Die einfachste Methode zur Installation von ModBridge auf Debian oder Ubuntu.
 
 ```bash
 # Für AMD64 (x86_64)
-wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_amd64.deb
+wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbridge_0.1.0_amd64.deb
 
 # Für ARM64 (Raspberry Pi 64-bit)
-wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_arm64.deb
+wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbridge_0.1.0_arm64.deb
 ```
 
 **Oder** klone das Repository:
@@ -63,10 +63,10 @@ cd modbridge/releases
 
 ```bash
 # Für AMD64
-sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
+sudo dpkg -i modbridge_0.1.0_amd64.deb
 
 # Für ARM64
-sudo dpkg -i modbus-proxy-manager_0.1.0_arm64.deb
+sudo dpkg -i modbridge_0.1.0_arm64.deb
 ```
 
 **Bei fehlenden Abhängigkeiten**:
@@ -78,13 +78,13 @@ sudo apt-get install -f
 ### Schritt 3: Service starten
 
 ```bash
-sudo systemctl start modbusmanager
+sudo systemctl start modbridge
 ```
 
 ### Schritt 4: Status überprüfen
 
 ```bash
-sudo systemctl status modbusmanager
+sudo systemctl status modbridge
 ```
 
 ### Schritt 5: Web-Interface öffnen
@@ -108,22 +108,22 @@ http://<SERVER-IP>:8080
 ### Dateien und Verzeichnisse
 
 ```
-/opt/modbusmanager/
-├── modbusmanager                    # Das Haupt-Binary
+/opt/modbridge/
+├── modbridge                    # Das Haupt-Binary
 
-/var/lib/modbusmanager/
+/var/lib/modbridge/
 ├── config.json                      # Konfigurationsdatei
 
-/var/log/modbusmanager/
+/var/log/modbridge/
 └── (Log-Dateien)                    # System-Logs
 
 /etc/systemd/system/
-└── modbusmanager.service            # Systemd Service
+└── modbridge.service            # Systemd Service
 ```
 
 ### System-User
 
-- **User**: `modbusmanager`
+- **User**: `modbridge`
 - **Home**: Kein Home-Verzeichnis
 - **Shell**: `/bin/false` (kein Login möglich)
 - **Zweck**: Sicherheit (Least Privilege Principle)
@@ -135,31 +135,31 @@ http://<SERVER-IP>:8080
 ### Status prüfen
 
 ```bash
-sudo systemctl status modbusmanager
+sudo systemctl status modbridge
 ```
 
 ### Service starten
 
 ```bash
-sudo systemctl start modbusmanager
+sudo systemctl start modbridge
 ```
 
 ### Service stoppen
 
 ```bash
-sudo systemctl stop modbusmanager
+sudo systemctl stop modbridge
 ```
 
 ### Service neustarten
 
 ```bash
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ### Autostart aktivieren
 
 ```bash
-sudo systemctl enable modbusmanager
+sudo systemctl enable modbridge
 ```
 
 Der Service wird **automatisch** beim Systemstart aktiviert, wenn das Paket installiert wird.
@@ -167,7 +167,7 @@ Der Service wird **automatisch** beim Systemstart aktiviert, wenn das Paket inst
 ### Autostart deaktivieren
 
 ```bash
-sudo systemctl disable modbusmanager
+sudo systemctl disable modbridge
 ```
 
 ---
@@ -177,25 +177,25 @@ sudo systemctl disable modbusmanager
 ### Live-Logs (folgt neuen Einträgen)
 
 ```bash
-sudo journalctl -u modbusmanager -f
+sudo journalctl -u modbridge -f
 ```
 
 ### Letzte 100 Log-Zeilen
 
 ```bash
-sudo journalctl -u modbusmanager -n 100
+sudo journalctl -u modbridge -n 100
 ```
 
 ### Logs seit heute
 
 ```bash
-sudo journalctl -u modbusmanager --since today
+sudo journalctl -u modbridge --since today
 ```
 
 ### Logs der letzten Stunde
 
 ```bash
-sudo journalctl -u modbusmanager --since "1 hour ago"
+sudo journalctl -u modbridge --since "1 hour ago"
 ```
 
 ---
@@ -205,7 +205,7 @@ sudo journalctl -u modbusmanager --since "1 hour ago"
 ### Konfigurationsdatei bearbeiten
 
 ```bash
-sudo nano /var/lib/modbusmanager/config.json
+sudo nano /var/lib/modbridge/config.json
 ```
 
 **Standard-Inhalt**:
@@ -221,7 +221,7 @@ sudo nano /var/lib/modbusmanager/config.json
 ### Nach Änderungen Service neustarten
 
 ```bash
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ### Web-Port ändern
@@ -229,7 +229,7 @@ sudo systemctl restart modbusmanager
 1. Datei bearbeiten:
 
 ```bash
-sudo nano /etc/systemd/system/modbusmanager.service
+sudo nano /etc/systemd/system/modbridge.service
 ```
 
 2. Zeile ändern:
@@ -242,7 +242,7 @@ Environment="WEB_PORT=:9090"
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ---
@@ -254,13 +254,13 @@ sudo systemctl restart modbusmanager
 1. **Neue Version herunterladen**:
 
 ```bash
-wget https://github.com/Xerolux/modbridge/releases/download/v0.2.0/modbus-proxy-manager_0.2.0_amd64.deb
+wget https://github.com/Xerolux/modbridge/releases/download/v0.2.0/modbridge_0.2.0_amd64.deb
 ```
 
 2. **Paket installieren** (überschreibt alte Version):
 
 ```bash
-sudo dpkg -i modbus-proxy-manager_0.2.0_amd64.deb
+sudo dpkg -i modbridge_0.2.0_amd64.deb
 ```
 
 3. **Service wird automatisch neugestartet**
@@ -274,7 +274,7 @@ sudo dpkg -i modbus-proxy-manager_0.2.0_amd64.deb
 ### Service beenden und Paket entfernen
 
 ```bash
-sudo apt-get remove modbus-proxy-manager
+sudo apt-get remove modbridge
 ```
 
 **Konfiguration und Daten bleiben erhalten**.
@@ -282,14 +282,14 @@ sudo apt-get remove modbus-proxy-manager
 ### Vollständiges Entfernen (inkl. Konfiguration)
 
 ```bash
-sudo apt-get purge modbus-proxy-manager
+sudo apt-get purge modbridge
 ```
 
 **Entfernt**:
-- Binary (`/opt/modbusmanager/`)
-- Konfiguration (`/var/lib/modbusmanager/`)
-- Logs (`/var/log/modbusmanager/`)
-- System-User (`modbusmanager`)
+- Binary (`/opt/modbridge/`)
+- Konfiguration (`/var/lib/modbridge/`)
+- Logs (`/var/log/modbridge/`)
+- System-User (`modbridge`)
 - Systemd Service
 
 ---
@@ -321,10 +321,10 @@ sudo kill -9 <PID>
 
 ```bash
 # Status prüfen
-sudo systemctl status modbusmanager
+sudo systemctl status modbridge
 
 # Detaillierte Logs
-sudo journalctl -u modbusmanager -n 50
+sudo journalctl -u modbridge -n 50
 ```
 
 **Häufige Ursachen**:
@@ -372,16 +372,16 @@ sudo apt-get install -f
 **Berechtigungen prüfen**:
 
 ```bash
-ls -la /opt/modbusmanager/modbusmanager
-ls -la /var/lib/modbusmanager/
+ls -la /opt/modbridge/modbridge
+ls -la /var/lib/modbridge/
 ```
 
 **Korrigieren**:
 
 ```bash
-sudo chown -R modbusmanager:modbusmanager /opt/modbusmanager
-sudo chown -R modbusmanager:modbusmanager /var/lib/modbusmanager
-sudo chown -R modbusmanager:modbusmanager /var/log/modbusmanager
+sudo chown -R modbridge:modbridge /opt/modbridge
+sudo chown -R modbridge:modbridge /var/lib/modbridge
+sudo chown -R modbridge:modbridge /var/log/modbridge
 ```
 
 ---
@@ -393,7 +393,7 @@ sudo chown -R modbusmanager:modbusmanager /var/log/modbusmanager
 1. **File Descriptor Limits erhöhen**:
 
 ```bash
-sudo nano /etc/systemd/system/modbusmanager.service
+sudo nano /etc/systemd/system/modbridge.service
 ```
 
 Hinzufügen:
@@ -406,7 +406,7 @@ LimitNOFILE=65536
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ### TCP-Parameter optimieren (System-weit)
@@ -475,12 +475,12 @@ sudo netfilter-persistent save
 
 ```bash
 # Backup erstellen
-sudo cp /var/lib/modbusmanager/config.json \
-       /var/lib/modbusmanager/config.json.backup
+sudo cp /var/lib/modbridge/config.json \
+       /var/lib/modbridge/config.json.backup
 
 # Mit Datum
-sudo cp /var/lib/modbusmanager/config.json \
-       /var/lib/modbusmanager/config.json.$(date +%Y%m%d)
+sudo cp /var/lib/modbridge/config.json \
+       /var/lib/modbridge/config.json.$(date +%Y%m%d)
 ```
 
 ### Cron-Job für tägliches Backup
@@ -493,10 +493,10 @@ Hinzufügen:
 
 ```cron
 # Täglich um 2:00 Uhr
-0 2 * * * cp /var/lib/modbusmanager/config.json /var/lib/modbusmanager/config.json.$(date +\%Y\%m\%d)
+0 2 * * * cp /var/lib/modbridge/config.json /var/lib/modbridge/config.json.$(date +\%Y\%m\%d)
 
 # Alte Backups löschen (älter als 30 Tage)
-0 3 * * * find /var/lib/modbusmanager/ -name "config.json.*" -mtime +30 -delete
+0 3 * * * find /var/lib/modbridge/ -name "config.json.*" -mtime +30 -delete
 ```
 
 ---
@@ -514,7 +514,7 @@ Beim ersten Zugriff auf `http://localhost:8080` werden Sie aufgefordert, ein Adm
 Wenn Sie nur lokal zugreifen:
 
 ```bash
-sudo nano /etc/systemd/system/modbusmanager.service
+sudo nano /etc/systemd/system/modbridge.service
 ```
 
 Ändern:
@@ -525,7 +525,7 @@ Environment="WEB_PORT=127.0.0.1:8080"
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ### 3. Reverse Proxy mit SSL
@@ -557,7 +557,7 @@ server {
 ### Logs überprüfen
 
 ```bash
-sudo journalctl -u modbusmanager -n 100
+sudo journalctl -u modbridge -n 100
 ```
 
 ### GitHub Issue erstellen
@@ -566,8 +566,8 @@ https://github.com/Xerolux/modbridge/issues
 
 **Bitte angeben**:
 - Linux-Distribution und Version (`lsb_release -a`)
-- Paket-Version (`dpkg -l | grep modbus-proxy-manager`)
-- Logs (`journalctl -u modbusmanager -n 100`)
+- Paket-Version (`dpkg -l | grep modbridge`)
+- Logs (`journalctl -u modbridge -n 100`)
 - Konfiguration (ohne Passwort-Hash!)
 - Fehlermeldung
 
@@ -577,24 +577,24 @@ https://github.com/Xerolux/modbridge/issues
 
 ```bash
 # Paket-Informationen anzeigen
-dpkg -l | grep modbus-proxy-manager
+dpkg -l | grep modbridge
 
 # Installierte Dateien auflisten
-dpkg -L modbus-proxy-manager
+dpkg -L modbridge
 
 # Paket-Details
-apt show modbus-proxy-manager
+apt show modbridge
 
 # Konfiguration exportieren (Backup)
-sudo cp /var/lib/modbusmanager/config.json ~/config-backup.json
+sudo cp /var/lib/modbridge/config.json ~/config-backup.json
 
 # Konfiguration wiederherstellen
-sudo cp ~/config-backup.json /var/lib/modbusmanager/config.json
-sudo systemctl restart modbusmanager
+sudo cp ~/config-backup.json /var/lib/modbridge/config.json
+sudo systemctl restart modbridge
 
 # Service komplett neu installieren
-sudo apt-get purge modbus-proxy-manager
-sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
+sudo apt-get purge modbridge
+sudo dpkg -i modbridge_0.1.0_amd64.deb
 ```
 
 ---

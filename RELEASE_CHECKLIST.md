@@ -31,7 +31,7 @@ This PR adds comprehensive installation and deployment automation:
 ✅ **Debian/Ubuntu Packages**
 - .deb packages for AMD64 and ARM64
 - Automatic systemd service setup
-- Simple installation: `sudo dpkg -i modbus-proxy-manager_*.deb`
+- Simple installation: `sudo dpkg -i modbridge_*.deb`
 
 ✅ **Docker Automation**
 - Automated Docker builds on every push
@@ -139,8 +139,8 @@ Die Workflows starten automatisch!
 ### Automatisch erstellt:
 
 1. **GitHub Release** mit:
-   - ✅ Binaries: `modbusmanager-linux-amd64`, `modbusmanager-linux-arm64`, etc.
-   - ✅ .deb Pakete: `modbus-proxy-manager_0.1.0_amd64.deb`, `modbus-proxy-manager_0.1.0_arm64.deb`
+   - ✅ Binaries: `modbridge-linux-amd64`, `modbridge-linux-arm64`, etc.
+   - ✅ .deb Pakete: `modbridge_0.1.0_amd64.deb`, `modbridge_0.1.0_arm64.deb`
    - ✅ Automatische Release Notes
 
 2. **Docker Images** auf ghcr.io:
@@ -152,8 +152,8 @@ Die Workflows starten automatisch!
 3. **Installation sofort verfügbar**:
    ```bash
    # .deb Package
-   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_amd64.deb
-   sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
+   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbridge_0.1.0_amd64.deb
+   sudo dpkg -i modbridge_0.1.0_amd64.deb
 
    # Docker
    docker pull ghcr.io/xerolux/modbridge:latest
@@ -178,10 +178,10 @@ Die Workflows starten automatisch!
 
 2. **.deb Package testen** (auf Debian/Ubuntu):
    ```bash
-   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_amd64.deb
-   sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
-   sudo systemctl start modbusmanager
-   sudo systemctl status modbusmanager
+   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbridge_0.1.0_amd64.deb
+   sudo dpkg -i modbridge_0.1.0_amd64.deb
+   sudo systemctl start modbridge
+   sudo systemctl status modbridge
    # Öffne: http://localhost:8080
    ```
 

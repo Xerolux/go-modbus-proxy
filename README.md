@@ -1,11 +1,10 @@
-# Modbus Proxy Manager (ModBridge)
+# ModBridge - Modbus TCP Proxy Manager
 
 **Version:** 0.1.0
 
-[![CI](https://github.com/Xerolux/modbridge/workflows/CI/badge.svg)](https://github.com/Xerolux/modbridge/actions/workflows/ci.yml)
-[![Release](https://github.com/Xerolux/modbridge/workflows/Release/badge.svg)](https://github.com/Xerolux/modbridge/actions/workflows/release.yml)
-[![Docker](https://github.com/Xerolux/modbridge/workflows/Docker/badge.svg)](https://github.com/Xerolux/modbridge/actions/workflows/docker-publish.yml)
+[![CI/CD Pipeline](https://github.com/Xerolux/modbridge/workflows/CI/CD%20Pipeline/badge.svg)](https://github.com/Xerolux/modbridge/actions/workflows/main.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Docker](https://img.shields.io/badge/docker-ghcr.io-blue)](https://github.com/Xerolux/modbridge/pkgs/container/modbridge)
 
 Ein moderner, robuster Modbus TCP Proxy Manager mit einer eleganten Web-Oberfläche. ModBridge ermöglicht die Verwaltung mehrerer Modbus TCP Proxy-Instanzen über eine zentrale Webschnittstelle.
 
@@ -13,8 +12,8 @@ Ein moderner, robuster Modbus TCP Proxy Manager mit einer eleganten Web-Oberflä
 
 ```bash
 # Debian/Ubuntu (.deb)
-wget https://github.com/Xerolux/modbridge/releases/latest/download/modbus-proxy-manager_0.1.0_amd64.deb
-sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
+wget https://github.com/Xerolux/modbridge/releases/latest/download/modbridge_0.1.0_amd64.deb
+sudo dpkg -i modbridge_0.1.0_amd64.deb
 
 # Docker (vorgefertigt)
 docker run -d -p 8080:8080 -p 5020-5030:5020-5030 ghcr.io/xerolux/modbridge:latest
@@ -105,19 +104,19 @@ Die schnellste Methode für Debian und Ubuntu Systeme.
 1. **Paket herunterladen**:
    ```bash
    # Für AMD64 (x86_64)
-   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_amd64.deb
+   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbridge_0.1.0_amd64.deb
 
    # Für ARM64 (Raspberry Pi 64-bit)
-   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbus-proxy-manager_0.1.0_arm64.deb
+   wget https://github.com/Xerolux/modbridge/releases/download/v0.1.0/modbridge_0.1.0_arm64.deb
    ```
 
 2. **Paket installieren**:
    ```bash
    # Für AMD64
-   sudo dpkg -i modbus-proxy-manager_0.1.0_amd64.deb
+   sudo dpkg -i modbridge_0.1.0_amd64.deb
 
    # Für ARM64
-   sudo dpkg -i modbus-proxy-manager_0.1.0_arm64.deb
+   sudo dpkg -i modbridge_0.1.0_arm64.deb
 
    # Falls Abhängigkeiten fehlen
    sudo apt-get install -f
@@ -125,7 +124,7 @@ Die schnellste Methode für Debian und Ubuntu Systeme.
 
 3. **Service starten**:
    ```bash
-   sudo systemctl start modbusmanager
+   sudo systemctl start modbridge
    ```
 
 4. **Web-Interface öffnen**:
@@ -148,7 +147,7 @@ Das schnellste Docker-Setup - kein Build erforderlich!
 1. **Image pullen und starten**:
    ```bash
    docker run -d \
-     --name modbus-proxy \
+     --name modbridge \
      -p 8080:8080 \
      -p 5020-5030:5020-5030 \
      -v $(pwd)/config.json:/app/config.json \
@@ -202,19 +201,19 @@ Das schnellste Docker-Setup - kein Build erforderlich!
 
 1. **Image bauen**:
    ```bash
-   docker build -t modbus-proxy-manager .
+   docker build -t modbridge .
    ```
 
 2. **Container starten**:
    ```bash
    docker run -d \
-     --name modbus-proxy \
+     --name modbridge \
      -p 8080:8080 \
      -p 5020-5030:5020-5030 \
      -v $(pwd)/config.json:/app/config.json \
      -v $(pwd)/logs:/app/data \
      -e WEB_PORT=:8080 \
-     modbus-proxy-manager
+     modbridge
    ```
 
 3. **Container verwalten**:
@@ -223,13 +222,13 @@ Das schnellste Docker-Setup - kein Build erforderlich!
    docker ps
 
    # Logs ansehen
-   docker logs -f modbus-proxy
+   docker logs -f modbridge
 
    # Container stoppen
-   docker stop modbus-proxy
+   docker stop modbridge
 
    # Container entfernen
-   docker rm modbus-proxy
+   docker rm modbridge
    ```
 
 ---
@@ -256,12 +255,12 @@ Für Entwicklung oder wenn Docker nicht verfügbar ist.
 
 3. **Kompilieren**:
    ```bash
-   go build -o modbusmanager main.go
+   go build -o modbridge main.go
    ```
 
 4. **Ausführen**:
    ```bash
-   ./modbusmanager
+   ./modbridge
    ```
 
 5. **Web-Interface öffnen**:
@@ -273,28 +272,28 @@ Für Entwicklung oder wenn Docker nicht verfügbar ist.
 
 ```bash
 # Linux AMD64
-GOOS=linux GOARCH=amd64 go build -o modbusmanager-linux-amd64 main.go
+GOOS=linux GOARCH=amd64 go build -o modbridge-linux-amd64 main.go
 
 # Linux ARM64 (Raspberry Pi 64-bit)
-GOOS=linux GOARCH=arm64 go build -o modbusmanager-linux-arm64 main.go
+GOOS=linux GOARCH=arm64 go build -o modbridge-linux-arm64 main.go
 
 # Linux ARM (Raspberry Pi 32-bit)
-GOOS=linux GOARCH=arm go build -o modbusmanager-linux-arm main.go
+GOOS=linux GOARCH=arm go build -o modbridge-linux-arm main.go
 
 # Windows AMD64
-GOOS=windows GOARCH=amd64 go build -o modbusmanager-windows.exe main.go
+GOOS=windows GOARCH=amd64 go build -o modbridge-windows.exe main.go
 
 # macOS Intel
-GOOS=darwin GOARCH=amd64 go build -o modbusmanager-darwin-amd64 main.go
+GOOS=darwin GOARCH=amd64 go build -o modbridge-darwin-amd64 main.go
 
 # macOS ARM (M1/M2)
-GOOS=darwin GOARCH=arm64 go build -o modbusmanager-darwin-arm64 main.go
+GOOS=darwin GOARCH=arm64 go build -o modbridge-darwin-arm64 main.go
 ```
 
 #### Optimiertes Build (kleiner Binary)
 
 ```bash
-go build -ldflags="-s -w" -o modbusmanager main.go
+go build -ldflags="-s -w" -o modbridge main.go
 ```
 
 **Flags Erklärung**:
@@ -324,8 +323,8 @@ Für produktive Linux-Server mit systemd.
    Das Script führt automatisch aus:
    - Erkennung der System-Architektur
    - Kompilierung des Binaries (falls nicht vorhanden)
-   - Erstellung eines System-Users (`modbusmanager`)
-   - Installation nach `/opt/modbusmanager`
+   - Erstellung eines System-Users (`modbridge`)
+   - Installation nach `/opt/modbridge`
    - Einrichtung von Daten-Verzeichnissen
    - Systemd-Service-Konfiguration
    - Service-Start und Aktivierung
@@ -334,83 +333,83 @@ Für produktive Linux-Server mit systemd.
 
 1. **Binary kompilieren**:
    ```bash
-   go build -ldflags="-s -w" -o modbusmanager main.go
+   go build -ldflags="-s -w" -o modbridge main.go
    ```
 
 2. **System-User erstellen**:
    ```bash
-   sudo useradd --system --no-create-home --shell /bin/false modbusmanager
+   sudo useradd --system --no-create-home --shell /bin/false modbridge
    ```
 
 3. **Verzeichnisse erstellen**:
    ```bash
-   sudo mkdir -p /opt/modbusmanager
-   sudo mkdir -p /var/lib/modbusmanager
-   sudo mkdir -p /var/log/modbusmanager
+   sudo mkdir -p /opt/modbridge
+   sudo mkdir -p /var/lib/modbridge
+   sudo mkdir -p /var/log/modbridge
    ```
 
 4. **Binary installieren**:
    ```bash
-   sudo cp modbusmanager /opt/modbusmanager/
-   sudo chmod +x /opt/modbusmanager/modbusmanager
+   sudo cp modbridge /opt/modbridge/
+   sudo chmod +x /opt/modbridge/modbridge
    ```
 
 5. **Berechtigungen setzen**:
    ```bash
-   sudo chown -R modbusmanager:modbusmanager /opt/modbusmanager
-   sudo chown -R modbusmanager:modbusmanager /var/lib/modbusmanager
-   sudo chown -R modbusmanager:modbusmanager /var/log/modbusmanager
+   sudo chown -R modbridge:modbridge /opt/modbridge
+   sudo chown -R modbridge:modbridge /var/lib/modbridge
+   sudo chown -R modbridge:modbridge /var/log/modbridge
    ```
 
 6. **Systemd Service kopieren**:
    ```bash
-   sudo cp modbusmanager.service /etc/systemd/system/
+   sudo cp modbridge.service /etc/systemd/system/
    ```
 
 7. **Service aktivieren und starten**:
    ```bash
    sudo systemctl daemon-reload
-   sudo systemctl enable modbusmanager
-   sudo systemctl start modbusmanager
+   sudo systemctl enable modbridge
+   sudo systemctl start modbridge
    ```
 
 #### Service-Verwaltung
 
 ```bash
 # Status prüfen
-sudo systemctl status modbusmanager
+sudo systemctl status modbridge
 
 # Service starten
-sudo systemctl start modbusmanager
+sudo systemctl start modbridge
 
 # Service stoppen
-sudo systemctl stop modbusmanager
+sudo systemctl stop modbridge
 
 # Service neustarten
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 
 # Logs ansehen (live)
-sudo journalctl -u modbusmanager -f
+sudo journalctl -u modbridge -f
 
 # Logs ansehen (letzte 100 Zeilen)
-sudo journalctl -u modbusmanager -n 100
+sudo journalctl -u modbridge -n 100
 
 # Service deaktivieren
-sudo systemctl disable modbusmanager
+sudo systemctl disable modbridge
 ```
 
 #### Service-Konfiguration anpassen
 
-Bearbeiten Sie `/etc/systemd/system/modbusmanager.service`:
+Bearbeiten Sie `/etc/systemd/system/modbridge.service`:
 
 ```bash
-sudo nano /etc/systemd/system/modbusmanager.service
+sudo nano /etc/systemd/system/modbridge.service
 ```
 
 Nach Änderungen:
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ---
@@ -485,7 +484,7 @@ Die Konfiguration wird in `config.json` im Arbeitsverzeichnis gespeichert.
 
 **Speicherort je nach Installationsmethode**:
 - **Docker**: `/app/config.json` (gemountet vom Host)
-- **Systemd**: `/var/lib/modbusmanager/config.json`
+- **Systemd**: `/var/lib/modbridge/config.json`
 - **Manuell**: `./config.json` (im aktuellen Verzeichnis)
 
 #### Standard-Konfiguration
@@ -646,13 +645,13 @@ Die meisten Einstellungen können über die Web-Oberfläche verwaltet werden:
 1. **Anwendung starten** (je nach Installationsmethode):
    ```bash
    # Manuell
-   ./modbusmanager
+   ./modbridge
 
    # Docker
    docker-compose up -d
 
    # Systemd
-   sudo systemctl start modbusmanager
+   sudo systemctl start modbridge
    ```
 
 2. **Web-Interface öffnen**:
@@ -766,7 +765,7 @@ client.close()
 - **Beispiel**:
   ```bash
   export WEB_PORT=:9090
-  ./modbusmanager
+  ./modbridge
   ```
 
 #### `LOG_LEVEL` (geplant für v0.2.0)
@@ -784,7 +783,7 @@ In `docker-compose.yml`:
 
 ```yaml
 services:
-  modbus-proxy:
+  modbridge:
     environment:
       - WEB_PORT=:8080
       - LOG_LEVEL=INFO
@@ -793,12 +792,12 @@ services:
 Oder beim Docker-Run:
 
 ```bash
-docker run -e WEB_PORT=:9090 -e LOG_LEVEL=DEBUG modbus-proxy-manager
+docker run -e WEB_PORT=:9090 -e LOG_LEVEL=DEBUG modbridge
 ```
 
 ### Systemd-Umgebungsvariablen
 
-In `/etc/systemd/system/modbusmanager.service`:
+In `/etc/systemd/system/modbridge.service`:
 
 ```ini
 [Service]
@@ -809,7 +808,7 @@ Environment="LOG_LEVEL=INFO"
 Nach Änderungen:
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl restart modbusmanager
+sudo systemctl restart modbridge
 ```
 
 ---
@@ -859,7 +858,7 @@ In `docker-compose.yml`:
 
 ```yaml
 services:
-  modbus-proxy:
+  modbridge:
     ulimits:
       nofile:
         soft: 65535
@@ -955,11 +954,11 @@ permission denied
 **Lösung**:
 ```bash
 # Entweder als Root ausführen
-sudo ./modbusmanager
+sudo ./modbridge
 
 # Oder CAP_NET_BIND_SERVICE setzen
-sudo setcap 'cap_net_bind_service=+ep' ./modbusmanager
-./modbusmanager
+sudo setcap 'cap_net_bind_service=+ep' ./modbridge
+./modbridge
 
 # Oder Port >= 1024 verwenden
 # In config.json: "web_port": ":8080"
@@ -972,13 +971,13 @@ sudo setcap 'cap_net_bind_service=+ep' ./modbusmanager
 **Diagnose**:
 ```bash
 # Logs ansehen
-docker logs modbus-proxy
+docker logs modbridge
 
 # Container-Status prüfen
 docker ps -a
 
 # Detaillierte Inspection
-docker inspect modbus-proxy
+docker inspect modbridge
 ```
 
 **Lösungen**:
@@ -993,17 +992,17 @@ docker inspect modbus-proxy
 **Diagnose**:
 ```bash
 # Status prüfen
-sudo systemctl status modbusmanager
+sudo systemctl status modbridge
 
 # Detaillierte Logs
-sudo journalctl -u modbusmanager -n 100 --no-pager
+sudo journalctl -u modbridge -n 100 --no-pager
 
 # Service-Konfiguration prüfen
-sudo systemctl cat modbusmanager
+sudo systemctl cat modbridge
 ```
 
 **Lösungen**:
-- Prüfen Sie Binary-Pfad: `/opt/modbusmanager/modbusmanager`
+- Prüfen Sie Binary-Pfad: `/opt/modbridge/modbridge`
 - Prüfen Sie Berechtigungen
 - Prüfen Sie Konfiguration
 - Prüfen Sie systemd-Unit-Datei
@@ -1030,7 +1029,7 @@ sudo systemctl cat modbusmanager
 
 ```bash
 export LOG_LEVEL=DEBUG
-./modbusmanager
+./modbridge
 ```
 
 ### Support
@@ -1039,8 +1038,8 @@ Bei Problemen:
 
 1. **Logs prüfen**:
    - Web-UI: Logs-Seite
-   - Docker: `docker logs modbus-proxy`
-   - Systemd: `journalctl -u modbusmanager -f`
+   - Docker: `docker logs modbridge`
+   - Systemd: `journalctl -u modbridge -f`
 
 2. **Konfiguration prüfen**:
    ```bash
