@@ -6,6 +6,7 @@ import (
 	"modbusproxy/pkg/api"
 	"modbusproxy/pkg/auth"
 	"modbusproxy/pkg/config"
+	"modbusproxy/pkg/database"
 	"modbusproxy/pkg/logger"
 	"modbusproxy/pkg/manager"
 	"modbusproxy/pkg/web"
@@ -17,21 +18,29 @@ import (
 )
 
 func main() {
-	// 1. Config
+	// 1. Database
+	db, err := database.NewDB("modbridge.db")
+	if err != nil {
+		log.Fatalf("Failed to init database: %v", err)
+	}
+	defer db.Close()
+	log.Println("Database initialized successfully")
+
+	// 2. Config
 	cfgMgr := config.NewManager("config.json")
 	if err := cfgMgr.Load(); err != nil {
 		log.Printf("Starting with empty config: %v", err)
 	}
 
-	// 2. Logger
+	// 3. Logger
 	l, err := logger.NewLogger("proxy.log", 1000)
 	if err != nil {
 		log.Fatalf("Failed to init logger: %v", err)
 	}
 	defer l.Close()
 
-	// 3. Manager
-	mgr := manager.NewManager(cfgMgr, l)
+	// 4. Manager
+	mgr := manager.NewManager(cfgMgr, l, db)
 	mgr.Initialize()
 
 	// 4. Auth

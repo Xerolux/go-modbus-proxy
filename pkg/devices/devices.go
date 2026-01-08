@@ -1,6 +1,7 @@
 package devices
 
 import (
+	"modbusproxy/pkg/database"
 	"net"
 	"sync"
 	"time"
@@ -17,16 +18,46 @@ type Device struct {
 	ProxyID      string    `json:"proxy_id"`
 }
 
-// Tracker tracks connected devices.
+// Tracker tracks connected devices with persistent storage.
 type Tracker struct {
 	mu      sync.RWMutex
-	devices map[string]*Device // key: IP address
+	devices map[string]*Device // key: IP address (cache)
+	db      *database.DB       // persistent storage
 }
 
-// NewTracker creates a new device tracker.
-func NewTracker() *Tracker {
-	return &Tracker{
+// NewTracker creates a new device tracker with database support.
+func NewTracker(db *database.DB) *Tracker {
+	t := &Tracker{
 		devices: make(map[string]*Device),
+		db:      db,
+	}
+
+	// Load existing devices from database into cache
+	if db != nil {
+		t.loadDevicesFromDB()
+	}
+
+	return t
+}
+
+// loadDevicesFromDB loads all devices from the database into the cache.
+func (t *Tracker) loadDevicesFromDB() {
+	dbDevices, err := t.db.GetAllDevices()
+	if err != nil {
+		// Log error but don't fail - can continue with empty cache
+		return
+	}
+
+	for _, dbDev := range dbDevices {
+		t.devices[dbDev.IP] = &Device{
+			IP:           dbDev.IP,
+			MAC:          dbDev.MAC,
+			Name:         dbDev.Name,
+			FirstSeen:    dbDev.FirstSeen,
+			LastConnect:  dbDev.LastConnect,
+			RequestCount: dbDev.RequestCount,
+			ProxyID:      dbDev.ProxyID,
+		}
 	}
 }
 
@@ -47,6 +78,7 @@ func (t *Tracker) TrackConnection(conn net.Conn, proxyID string) {
 	}
 
 	mac := getMACAddress(ip)
+	now := time.Now()
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
@@ -57,15 +89,34 @@ func (t *Tracker) TrackConnection(conn net.Conn, proxyID string) {
 			IP:        ip,
 			MAC:       mac,
 			Name:      "", // Will be set by user
-			FirstSeen: time.Now(),
+			FirstSeen: now,
 			ProxyID:   proxyID,
 		}
 		t.devices[ip] = device
 	}
 
-	device.LastConnect = time.Now()
+	device.LastConnect = now
 	device.RequestCount++
 	device.ProxyID = proxyID
+
+	// Save to database if available
+	if t.db != nil {
+		dbDevice := &database.Device{
+			IP:           device.IP,
+			MAC:          device.MAC,
+			Name:         device.Name,
+			FirstSeen:    device.FirstSeen,
+			LastConnect:  device.LastConnect,
+			RequestCount: device.RequestCount,
+			ProxyID:      device.ProxyID,
+		}
+		// Fire and forget - don't block on DB writes
+		go func() {
+			_ = t.db.SaveDevice(dbDevice)
+			// Also add to connection history
+			_ = t.db.AddConnectionHistory(ip, proxyID)
+		}()
+	}
 }
 
 // GetDevices returns all tracked devices.
@@ -97,7 +148,31 @@ func (t *Tracker) SetDeviceName(ip, name string) error {
 	} else {
 		device.Name = name
 	}
+
+	// Save to database if available
+	if t.db != nil {
+		go func() {
+			_ = t.db.UpdateDeviceName(ip, name)
+		}()
+	}
+
 	return nil
+}
+
+// GetConnectionHistory returns connection history for a device.
+func (t *Tracker) GetConnectionHistory(ip string, limit int) ([]*database.ConnectionHistoryEntry, error) {
+	if t.db == nil {
+		return nil, nil
+	}
+	return t.db.GetConnectionHistory(ip, limit)
+}
+
+// GetAllConnectionHistory returns all connection history with optional proxy filter.
+func (t *Tracker) GetAllConnectionHistory(proxyID string, limit int) ([]*database.ConnectionHistoryEntry, error) {
+	if t.db == nil {
+		return nil, nil
+	}
+	return t.db.GetAllConnectionHistory(proxyID, limit)
 }
 
 // getMACAddress attempts to get the MAC address for an IP.

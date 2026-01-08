@@ -3,6 +3,7 @@ package manager
 import (
 	"fmt"
 	"modbusproxy/pkg/config"
+	"modbusproxy/pkg/database"
 	"modbusproxy/pkg/devices"
 	"modbusproxy/pkg/logger"
 	"modbusproxy/pkg/proxy"
@@ -19,13 +20,13 @@ type Manager struct {
 	deviceTracker *devices.Tracker
 }
 
-// NewManager creates a manager.
-func NewManager(cfgMgr *config.Manager, log *logger.Logger) *Manager {
+// NewManager creates a manager with database support.
+func NewManager(cfgMgr *config.Manager, log *logger.Logger, db *database.DB) *Manager {
 	m := &Manager{
 		proxies:       make(map[string]*proxy.ProxyInstance),
 		cfgMgr:        cfgMgr,
 		log:           log,
-		deviceTracker: devices.NewTracker(),
+		deviceTracker: devices.NewTracker(db),
 	}
 	return m
 }
@@ -290,4 +291,14 @@ func (m *Manager) GetDevices() []devices.Device {
 // SetDeviceName sets a user-friendly name for a device.
 func (m *Manager) SetDeviceName(ip, name string) error {
 	return m.deviceTracker.SetDeviceName(ip, name)
+}
+
+// GetConnectionHistory returns connection history for a device.
+func (m *Manager) GetConnectionHistory(ip string, limit int) ([]*database.ConnectionHistoryEntry, error) {
+	return m.deviceTracker.GetConnectionHistory(ip, limit)
+}
+
+// GetAllConnectionHistory returns all connection history with optional proxy filter.
+func (m *Manager) GetAllConnectionHistory(proxyID string, limit int) ([]*database.ConnectionHistoryEntry, error) {
+	return m.deviceTracker.GetAllConnectionHistory(proxyID, limit)
 }
