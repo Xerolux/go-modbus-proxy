@@ -1,12 +1,12 @@
 .PHONY: help build test clean run docker-build docker-run lint coverage deb-amd64 deb-arm64 deb-all
 
 # Variables
-BINARY_NAME=modbusmanager
-DOCKER_IMAGE=modbus-proxy-manager
+BINARY_NAME=modbridge
+DOCKER_IMAGE=modbridge
 VERSION?=$(shell cat version.txt 2>/dev/null || echo "0.1.0")
 LDFLAGS=-ldflags "-s -w -X main.Version=$(VERSION)"
 DEB_BUILD_DIR=build
-DEB_PACKAGE_NAME=modbus-proxy-manager
+DEB_PACKAGE_NAME=modbridge
 
 help: ## Show this help message
 	@echo 'Usage: make [target]'

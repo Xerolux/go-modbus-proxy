@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Modbus Proxy Manager - Installation Script
-# This script installs modbusmanager as a systemd service
+# This script installs modbridge as a systemd service
 
 set -e
 
@@ -12,12 +12,12 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Configuration
-INSTALL_DIR="/opt/modbusmanager"
-BINARY_NAME="modbusmanager"
-SERVICE_NAME="modbusmanager"
-SERVICE_USER="modbusmanager"
-DATA_DIR="/var/lib/modbusmanager"
-LOG_DIR="/var/log/modbusmanager"
+INSTALL_DIR="/opt/modbridge"
+BINARY_NAME="modbridge"
+SERVICE_NAME="modbridge"
+SERVICE_USER="modbridge"
+DATA_DIR="/var/lib/modbridge"
+LOG_DIR="/var/log/modbridge"
 
 echo -e "${GREEN}=== Modbus Proxy Manager Installation ===${NC}"
 

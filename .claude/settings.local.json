@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(go test:*)",
+      "Bash(go build:*)",
+      "Bash(docker build:*)",
+      "Bash(go run:*)",
+      "Bash(timeout 3 bash -c 'while ! curl -s http://localhost:8080/api/health > /dev/null 2>&1; do sleep 0.5; done && echo \"\"Server is up\"\"')",
+      "Bash(curl:*)",
+      "Bash(timeout 5 bash -c 'cat < /dev/null > /dev/tcp/192.168.178.103/502')",
+      "Bash(if [ -f modbusmanager.service ])",
+      "Bash(then mv modbusmanager.service modbridge.service)",
+      "Bash(fi)",
+      "Bash(git add:*)"
+    ]
+  }
+}

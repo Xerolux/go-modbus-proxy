@@ -1,14 +1,14 @@
 [Unit]
-Description=Modbus Proxy Manager
-Documentation=https://github.com/Xerolux/go-modbus-proxy
+Description=ModBridge - Modbus TCP Proxy Manager
+Documentation=https://github.com/Xerolux/modbridge
 After=network.target
 
 [Service]
 Type=simple
-User=modbusmanager
-Group=modbusmanager
-WorkingDirectory=/var/lib/modbusmanager
-ExecStart=/opt/modbusmanager/modbusmanager
+User=modbridge
+Group=modbridge
+WorkingDirectory=/var/lib/modbridge
+ExecStart=/opt/modbridge/modbridge
 Restart=on-failure
 RestartSec=5s
 TimeoutStopSec=30s
@@ -18,7 +18,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/lib/modbusmanager /var/log/modbusmanager
+ReadWritePaths=/var/lib/modbridge /var/log/modbridge
 
 # Environment variables
 Environment="WEB_PORT=:8080"
@@ -29,7 +29,7 @@ LimitNOFILE=65536
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=modbusmanager
+SyslogIdentifier=modbridge
 
 [Install]
 WantedBy=multi-user.target

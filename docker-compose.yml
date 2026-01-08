@@ -1,33 +1,77 @@
 version: '3.8'
 
 services:
-  modbus-proxy:
+  modbridge:
     # Option 1: Use pre-built image from GitHub Container Registry (recommended)
     image: ghcr.io/xerolux/modbridge:latest
 
     # Option 2: Build locally (comment out 'image' above and uncomment below)
-    # build: .
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
+    #   args:
+    #     VERSION: ${VERSION:-dev}
 
-    container_name: modbus-proxy-manager
+    container_name: modbridge
+    hostname: modbridge
+
     ports:
-      - "8080:8080"
+      - "8080:8080"         # Web UI
       - "5020-5030:5020-5030"  # Modbus proxy ports
+
     volumes:
-      - ./config.json:/app/config.json
-      - ./logs:/app/data
+      - ./config.json:/app/config.json:rw
+      - modbus-data:/app/data
+      - modbus-logs:/var/log/modbus
+
     environment:
       - WEB_PORT=:8080
-      - LOG_LEVEL=INFO
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
+      - TZ=${TZ:-UTC}
+
     restart: unless-stopped
+
     networks:
       - modbus-network
+
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/health"]
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 5s
+      start_period: 10s
+
+    # Security settings
+    security_opt:
+      - no-new-privileges:true
+
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 128M
+
+    # Logging configuration
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+        compress: "true"
 
 networks:
   modbus-network:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  modbus-data:
+    driver: local
+  modbus-logs:
+    driver: local

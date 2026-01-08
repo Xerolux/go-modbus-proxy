@@ -1,0 +1,63 @@
+# Git
+.git
+.gitignore
+.github
+
+# CI/CD
+.travis.yml
+.gitlab-ci.yml
+
+# Documentation
+*.md
+docs/
+DEPLOYMENT.md
+CONTRIBUTING.md
+ROADMAP.md
+CHANGELOG.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Build artifacts
+modbridge
+modbridge.exe
+modbridge-*
+modbusmanager
+modbusmanager.exe
+modbusmanager-*
+*.exe
+*.deb
+releases/
+dist/
+build/
+
+# Test files
+*_test.go
+coverage.txt
+*.out
+
+# Config and data (should be mounted)
+config.json
+*.log
+logs/
+data/
+
+# Dependencies
+vendor/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Claude
+.claude/

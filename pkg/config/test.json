@@ -1,0 +1,13 @@
+{
+  "web_port": ":8080",
+  "admin_pass_hash": "",
+  "proxies": [
+    {
+      "id": "1",
+      "name": "Test",
+      "listen_addr": "",
+      "target_addr": "",
+      "enabled": false
+    }
+  ]
+}
