@@ -8,11 +8,16 @@ import (
 
 // ProxyConfig defines the configuration for a single proxy instance.
 type ProxyConfig struct {
-	ID         string `json:"id"`
-	Name       string `json:"name"`
-	ListenAddr string `json:"listen_addr"`
-	TargetAddr string `json:"target_addr"`
-	Enabled    bool   `json:"enabled"`
+	ID                string `json:"id"`
+	Name              string `json:"name"`
+	ListenAddr        string `json:"listen_addr"`
+	TargetAddr        string `json:"target_addr"`
+	Enabled           bool   `json:"enabled"`
+	Paused            bool   `json:"paused"`             // New: Paused state (different from Enabled)
+	ConnectionTimeout int    `json:"connection_timeout"` // New: Connection timeout in seconds (default: 10)
+	ReadTimeout       int    `json:"read_timeout"`       // New: Read timeout in seconds (default: 30)
+	MaxRetries        int    `json:"max_retries"`        // New: Max retry attempts (default: 3)
+	Description       string `json:"description"`        // New: User description
 }
 
 // Config holds the global configuration.

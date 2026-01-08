@@ -144,10 +144,100 @@ func (m *Manager) StopProxy(id string) error {
 	})
 }
 
+// PauseProxy pauses a running proxy.
+func (m *Manager) PauseProxy(id string) error {
+	m.mu.Lock()
+	p, ok := m.proxies[id]
+	m.mu.Unlock()
+
+	if !ok {
+		return fmt.Errorf("proxy not found")
+	}
+
+	// Stop the proxy but keep enabled=true, set paused=true
+	p.Stop()
+
+	return m.cfgMgr.Update(func(c *config.Config) error {
+		for i, pc := range c.Proxies {
+			if pc.ID == id {
+				c.Proxies[i].Paused = true
+			}
+		}
+		return nil
+	})
+}
+
+// ResumeProxy resumes a paused proxy.
+func (m *Manager) ResumeProxy(id string) error {
+	m.mu.Lock()
+	p, ok := m.proxies[id]
+	m.mu.Unlock()
+
+	if !ok {
+		return fmt.Errorf("proxy not found")
+	}
+
+	// Start the proxy and set paused=false
+	if err := p.Start(); err != nil {
+		return err
+	}
+
+	return m.cfgMgr.Update(func(c *config.Config) error {
+		for i, pc := range c.Proxies {
+			if pc.ID == id {
+				c.Proxies[i].Paused = false
+				c.Proxies[i].Enabled = true
+			}
+		}
+		return nil
+	})
+}
+
+// UpdateProxy updates an existing proxy configuration.
+func (m *Manager) UpdateProxy(cfg config.ProxyConfig) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	// Check if proxy exists
+	if _, ok := m.proxies[cfg.ID]; !ok {
+		return fmt.Errorf("proxy not found")
+	}
+
+	// Stop the old proxy
+	m.proxies[cfg.ID].Stop()
+
+	// Create new proxy with updated config
+	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, m.log, m.deviceTracker)
+	m.proxies[cfg.ID] = p
+
+	// Start if it was enabled and not paused
+	if cfg.Enabled && !cfg.Paused {
+		p.Start()
+	}
+
+	// Update config
+	return m.cfgMgr.Update(func(c *config.Config) error {
+		for i, pc := range c.Proxies {
+			if pc.ID == cfg.ID {
+				c.Proxies[i] = cfg
+				break
+			}
+		}
+		return nil
+	})
+}
+
 // GetProxies returns status of all proxies.
 func (m *Manager) GetProxies() []map[string]interface{} {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
+
+	// Get current config to include paused status and other fields
+	cfg := m.cfgMgr.Get()
+	cfgMap := make(map[string]config.ProxyConfig)
+	for _, pc := range cfg.Proxies {
+		cfgMap[pc.ID] = pc
+	}
 
 	res := []map[string]interface{}{}
 	for _, p := range m.proxies {
@@ -157,15 +247,24 @@ func (m *Manager) GetProxies() []map[string]interface{} {
 			uptime = time.Since(status.LastStart)
 		}
 
+		// Get config for this proxy
+		pCfg := cfgMap[p.ID]
+
 		res = append(res, map[string]interface{}{
-			"id":          p.ID,
-			"name":        p.Name,
-			"listen_addr": p.ListenAddr,
-			"target_addr": p.TargetAddr,
-			"status":      status.Status,
-			"uptime_s":    uptime.Seconds(),
-			"requests":    status.Requests,
-			"errors":      status.Errors,
+			"id":                 p.ID,
+			"name":               p.Name,
+			"listen_addr":        p.ListenAddr,
+			"target_addr":        p.TargetAddr,
+			"status":             status.Status,
+			"paused":             pCfg.Paused,
+			"enabled":            pCfg.Enabled,
+			"uptime_s":           uptime.Seconds(),
+			"requests":           status.Requests,
+			"errors":             status.Errors,
+			"description":        pCfg.Description,
+			"connection_timeout": pCfg.ConnectionTimeout,
+			"read_timeout":       pCfg.ReadTimeout,
+			"max_retries":        pCfg.MaxRetries,
 		})
 	}
 	return res

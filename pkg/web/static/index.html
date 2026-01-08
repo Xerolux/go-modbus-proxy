@@ -1,220 +1,686 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modbus Proxy Manager</title>
+    <title>ModBridge Manager</title>
     <script src="assets/tailwindcss.js"></script>
     <script src="assets/vue.global.prod.js"></script>
     <style>
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-tertiary: #f1f5f9;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-tertiary: #64748b;
+            --border-color: #e2e8f0;
+            --accent: #3b82f6;
+            --accent-hover: #2563eb;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+            --shadow: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-tertiary: #94a3b8;
+            --border-color: #334155;
+            --shadow: rgba(0, 0, 0, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f5f5f7;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
         }
+
         .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 6px var(--shadow);
+            transition: all 0.3s;
         }
-        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+
+        .glass:hover {
+            box-shadow: 0 10px 15px var(--shadow);
+            transform: translateY(-2px);
+        }
+
+        .btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+            font-size: 0.875rem;
+        }
+
+        .btn-primary {
+            background: var(--accent);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-running { background: #dcfce7; color: #166534; }
+        .status-stopped { background: #f3f4f6; color: #374151; }
+        .status-paused { background: #fef3c7; color: #92400e; }
+        .status-error { background: #fee2e2; color: #991b1b; }
+
+        [data-theme="dark"] .status-running { background: #166534; color: #dcfce7; }
+        [data-theme="dark"] .status-stopped { background: #374151; color: #f3f4f6; }
+        [data-theme="dark"] .status-paused { background: #92400e; color: #fef3c7; }
+        [data-theme="dark"] .status-error { background: #991b1b; color: #fee2e2; }
+
+        .sidebar {
+            width: 260px;
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+
+        .main-content {
+            margin-left: 260px;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .nav-item {
+            padding: 0.75rem 1.25rem;
+            margin: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text-secondary);
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .nav-item:hover {
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--accent);
+            color: white;
+        }
+
+        .card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            transition: all 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 15px var(--shadow);
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        .metric-value {
+            font-size: 3rem;
+            font-weight: 700;
+            margin: 0.5rem 0;
+        }
+
+        .metric-label {
+            color: var(--text-tertiary);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            animation: fadeIn 0.2s;
+        }
+
+        .modal {
+            background: var(--bg-secondary);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px var(--shadow);
+            animation: slideUp 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .log-container {
+            background: #0f172a;
+            color: #e2e8f0;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow-y: auto;
+            max-height: 500px;
+        }
+
+        .log-entry {
+            padding: 0.25rem 0.5rem;
+            border-left: 2px solid transparent;
+            margin: 0.125rem 0;
+        }
+
+        .log-info { border-left-color: #10b981; }
+        .log-warn { border-left-color: #f59e0b; }
+        .log-error { border-left-color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+            background: var(--bg-tertiary);
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--accent);
+        }
+
+        .toggle-switch-thumb {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+
+        .toggle-switch.active .toggle-switch-thumb {
+            transform: translateX(24px);
+        }
+
+        .device-card {
+            padding: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            background: var(--bg-primary);
+        }
+
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s; }
         .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+        @media (max-width: 768px) {
+            .sidebar { width: 200px; }
+            .main-content { margin-left: 200px; padding: 1rem; }
+        }
     </style>
 </head>
-<body class="text-gray-800 antialiased h-screen overflow-hidden flex flex-col">
+<body>
+    <div id="app">
+        <!-- Login/Setup View (wenn nicht authentifiziert) -->
+        <div v-if="!authenticated" class="min-h-screen flex items-center justify-center p-4">
+            <div class="card" style="max-width: 400px; width: 100%;">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <h1 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">🔒 ModBridge</h1>
+                    <p style="color: var(--text-tertiary);">Modbus Proxy Manager</p>
+                </div>
 
-    <div id="app" class="flex h-full">
-        <!-- Sidebar -->
-        <aside class="w-64 glass border-r border-gray-200 flex flex-col justify-between p-4" v-if="authenticated || !setupRequired">
-            <div>
-                <h1 class="text-xl font-bold mb-8 px-2 tracking-tight text-gray-900">Modbus Manager</h1>
-                <nav class="space-y-1">
-                    <a href="#" @click="currentView = 'dashboard'" :class="{'bg-gray-200/50': currentView === 'dashboard'}" class="block px-3 py-2 rounded-lg hover:bg-white/50 transition">Dashboard</a>
-                    <a href="#" @click="currentView = 'proxies'" :class="{'bg-gray-200/50': currentView === 'proxies'}" class="block px-3 py-2 rounded-lg hover:bg-white/50 transition">Proxies</a>
-                    <a href="#" @click="currentView = 'logs'" :class="{'bg-gray-200/50': currentView === 'logs'}" class="block px-3 py-2 rounded-lg hover:bg-white/50 transition">Logs</a>
+                <!-- Setup -->
+                <div v-if="setupRequired">
+                    <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem;">Ersteinrichtung</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 1.5rem;">Bitte legen Sie ein Admin-Passwort fest.</p>
+                    <form @submit.prevent="doSetup">
+                        <input v-model="setupPassword" type="password" placeholder="Admin-Passwort" class="input-field" style="margin-bottom: 1rem;" required>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Passwort festlegen</button>
+                    </form>
+                </div>
+
+                <!-- Login -->
+                <div v-else>
+                    <h2 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">Admin Login</h2>
+                    <form @submit.prevent="doLogin">
+                        <input v-model="loginPassword" type="password" placeholder="Passwort" class="input-field" style="margin-bottom: 1rem;" required>
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Anmelden</button>
+                    </form>
+                    <p v-if="loginError" style="color: var(--error); margin-top: 1rem; text-align: center; font-size: 0.875rem;">{{ loginError }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main App (nur wenn authentifiziert) -->
+        <div v-else>
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div style="padding: 1.5rem; border-bottom: 1px solid var(--border-color);">
+                    <h1 style="font-size: 1.5rem; font-weight: 700;">ModBridge</h1>
+                    <p style="font-size: 0.75rem; color: var(--text-tertiary); margin-top: 0.25rem;">Modbus Proxy Manager</p>
+                </div>
+
+                <nav style="flex: 1; padding: 1rem 0; overflow-y: auto;">
+                    <div @click="currentView = 'dashboard'" :class="{'active': currentView === 'dashboard'}" class="nav-item">
+                        <span>📊</span> Dashboard
+                    </div>
+                    <div @click="currentView = 'proxies'" :class="{'active': currentView === 'proxies'}" class="nav-item">
+                        <span>🔌</span> Proxies
+                    </div>
+                    <div @click="currentView = 'devices'" :class="{'active': currentView === 'devices'}" class="nav-item">
+                        <span>📡</span> Geräte
+                    </div>
+                    <div @click="currentView = 'logs'" :class="{'active': currentView === 'logs'}" class="nav-item">
+                        <span>📋</span> Logs
+                    </div>
+                    <div @click="currentView = 'settings'" :class="{'active': currentView === 'settings'}" class="nav-item">
+                        <span>⚙️</span> Einstellungen
+                    </div>
                 </nav>
-            </div>
-            <div class="px-2" v-if="authenticated">
-                <button @click="logout" class="text-sm text-red-500 hover:text-red-700 font-medium">Logout</button>
-            </div>
-            <div class="px-2" v-else>
-                <button @click="currentView = 'login'" class="text-sm text-blue-500 hover:text-blue-700 font-medium">Login (Admin)</button>
-            </div>
-        </aside>
 
-        <!-- Main Content -->
-        <main class="flex-1 overflow-auto p-8 relative">
-            
-            <!-- Setup View -->
-            <div v-if="setupRequired" class="max-w-md mx-auto mt-20 p-8 glass rounded-2xl shadow-xl">
-                <h2 class="text-2xl font-bold mb-4 text-center">Welcome</h2>
-                <p class="mb-6 text-gray-600 text-center">Please set an admin password to get started.</p>
-                <form @submit.prevent="doSetup">
-                    <input v-model="setupPassword" type="password" placeholder="New Password" class="w-full p-3 rounded-lg border border-gray-300 mb-4 focus:ring-2 focus:ring-blue-500 outline-none" required>
-                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition">Set Password</button>
-                </form>
-            </div>
-
-            <!-- Login View -->
-            <div v-else-if="currentView === 'login' && !authenticated" class="max-w-md mx-auto mt-20 p-8 glass rounded-2xl shadow-xl">
-                <h2 class="text-2xl font-bold mb-4 text-center">Admin Login</h2>
-                <form @submit.prevent="doLogin">
-                    <input v-model="loginPassword" type="password" placeholder="Password" class="w-full p-3 rounded-lg border border-gray-300 mb-4 focus:ring-2 focus:ring-blue-500 outline-none" required>
-                    <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition">Login</button>
-                </form>
-            </div>
-
-            <!-- Dashboard -->
-            <div v-else-if="currentView === 'dashboard'">
-                <h2 class="text-3xl font-bold mb-6">Dashboard</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div class="glass p-6 rounded-2xl">
-                        <div class="text-gray-500 text-sm font-medium">Total Proxies</div>
-                        <div class="text-4xl font-bold mt-2">{{ proxies.length }}</div>
-                    </div>
-                    <div class="glass p-6 rounded-2xl">
-                        <div class="text-gray-500 text-sm font-medium">Running</div>
-                        <div class="text-4xl font-bold mt-2 text-green-600">{{ proxies.filter(p => p.status === 'Running').length }}</div>
-                    </div>
-                    <div class="glass p-6 rounded-2xl">
-                        <div class="text-gray-500 text-sm font-medium">Total Errors</div>
-                        <div class="text-4xl font-bold mt-2 text-red-500">{{ totalErrors }}</div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Proxies List -->
-            <div v-else-if="currentView === 'proxies'">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Proxies</h2>
-                    <button v-if="authenticated" @click="showAddModal = true" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">+ Add Proxy</button>
-                </div>
-
-                <div class="grid grid-cols-1 gap-4">
-                    <div v-for="proxy in proxies" :key="proxy.id" class="glass p-6 rounded-2xl flex justify-between items-center">
-                        <div>
-                            <div class="flex items-center gap-3">
-                                <h3 class="text-xl font-bold">{{ proxy.name }}</h3>
-                                <span :class="{'bg-green-100 text-green-700': proxy.status === 'Running', 'bg-gray-100 text-gray-700': proxy.status === 'Stopped', 'bg-red-100 text-red-700': proxy.status === 'Error'}" class="px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide">{{ proxy.status }}</span>
-                            </div>
-                            <div class="text-gray-500 mt-1 flex gap-4 text-sm">
-                                <span>Listen: {{ proxy.listen_addr }}</span>
-                                <span>Target: {{ proxy.target_addr }}</span>
-                            </div>
-                            <div class="text-gray-400 mt-2 text-xs">
-                                Uptime: {{ formatUptime(proxy.uptime_s) }} | Req: {{ proxy.requests }} | Err: {{ proxy.errors }}
-                            </div>
-                        </div>
-                        <div v-if="authenticated" class="flex gap-2">
-                            <button v-if="proxy.status !== 'Running'" @click="controlProxy(proxy.id, 'start')" class="p-2 bg-green-50 text-green-600 rounded hover:bg-green-100">Start</button>
-                            <button v-if="proxy.status === 'Running'" @click="controlProxy(proxy.id, 'stop')" class="p-2 bg-gray-50 text-gray-600 rounded hover:bg-gray-100">Stop</button>
-                            <button @click="controlProxy(proxy.id, 'restart')" class="p-2 bg-blue-50 text-blue-600 rounded hover:bg-blue-100">Restart</button>
-                            <button @click="deleteProxy(proxy.id)" class="p-2 bg-red-50 text-red-600 rounded hover:bg-red-100">Delete</button>
+                <div style="padding: 1rem; border-top: 1px solid var(--border-color);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                        <span style="font-size: 0.875rem; color: var(--text-secondary);">Dark Mode</span>
+                        <div @click="toggleDarkMode" :class="{'active': darkMode}" class="toggle-switch">
+                            <div class="toggle-switch-thumb"></div>
                         </div>
                     </div>
+                    <button @click="logout" class="btn btn-danger" style="width: 100%; font-size: 0.875rem;">Abmelden</button>
                 </div>
             </div>
 
-            <!-- Logs -->
-            <div v-else-if="currentView === 'logs'" class="h-full flex flex-col">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-3xl font-bold">Live Logs</h2>
-                    <div class="flex gap-2">
-                        <input v-model="logFilter" placeholder="Filter logs..." class="p-2 rounded border text-sm">
-                        <select v-model="logLevelFilter" class="p-2 rounded border text-sm">
-                            <option value="">All Levels</option>
-                            <option value="INFO">INFO</option>
-                            <option value="WARN">WARN</option>
-                            <option value="ERROR">ERROR</option>
-                        </select>
-                        <a href="/api/logs/download" target="_blank" class="bg-gray-200 text-gray-700 px-3 py-2 rounded hover:bg-gray-300 text-sm font-medium">Download</a>
+            <!-- Main Content -->
+            <div class="main-content">
+                <!-- Dashboard -->
+                <div v-if="currentView === 'dashboard'">
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Dashboard</h2>
+                        <p style="color: var(--text-tertiary);">Übersicht über alle Modbus-Proxies und Geräte</p>
                     </div>
-                </div>
-                <div class="flex-1 glass rounded-2xl p-4 overflow-hidden flex flex-col font-mono text-sm bg-gray-900 text-gray-200">
-                    <div class="flex-1 overflow-auto space-y-1" id="log-container">
-                        <div v-for="(log, i) in filteredLogs" :key="i" class="border-l-2 pl-2" :class="logColor(log.level)">
-                            <span class="opacity-50 text-xs">{{ formatTime(log.timestamp) }}</span>
-                            <span class="font-bold mx-2">[{{ log.level }}]</span>
-                            <span v-if="log.proxy_id" class="text-blue-400 mr-2">({{ proxyName(log.proxy_id) }})</span>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                        <div class="card metric-card">
+                            <div class="metric-label">Proxies Gesamt</div>
+                            <div class="metric-value" style="color: var(--accent);">{{ proxies.length }}</div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-label">Aktiv</div>
+                            <div class="metric-value" style="color: var(--success);">{{ proxies.filter(p => p.status === 'Running').length }}</div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-label">Pausiert</div>
+                            <div class="metric-value" style="color: var(--warning);">{{ proxies.filter(p => p.paused).length }}</div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-label">Fehler</div>
+                            <div class="metric-value" style="color: var(--error);">{{ totalErrors }}</div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-label">Anfragen</div>
+                            <div class="metric-value">{{ totalRequests }}</div>
+                        </div>
+                        <div class="card metric-card">
+                            <div class="metric-label">Geräte</div>
+                            <div class="metric-value" style="color: var(--accent);">{{ devices.length }}</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Letzte Aktivität</h3>
+                        <div v-for="log in recentLogs" :key="log.timestamp" class="log-entry" :class="'log-' + log.level.toLowerCase()">
+                            <span style="opacity: 0.5; margin-right: 0.5rem;">{{ formatTime(log.timestamp) }}</span>
+                            <span style="font-weight: 600; margin-right: 0.5rem;">[{{ log.level }}]</span>
                             <span>{{ log.message }}</span>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- Settings/Config -->
-             <div v-if="currentView === 'proxies'" class="mt-8">
-                <div class="border-t border-gray-300 pt-4">
-                    <h3 class="text-xl font-bold mb-4">Configuration</h3>
-                    <div class="flex gap-4">
-                        <a href="/api/config/export" target="_blank" class="bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200">Export Config</a>
-                        
-                        <label class="bg-green-100 text-green-700 px-4 py-2 rounded hover:bg-green-200 cursor-pointer">
-                            Import Config
-                            <input type="file" @change="importConfig" class="hidden">
-                        </label>
+                <!-- Proxies -->
+                <div v-if="currentView === 'proxies'">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                        <div>
+                            <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Modbus Proxies</h2>
+                            <p style="color: var(--text-tertiary);">Verwalten Sie alle Modbus-Verbindungen</p>
+                        </div>
+                        <button @click="openAddModal" class="btn btn-primary">+ Neuer Proxy</button>
+                    </div>
+
+                    <div v-if="proxies.length === 0" style="text-align: center; padding: 4rem 2rem;">
+                        <p style="font-size: 1.25rem; color: var(--text-tertiary);">Noch keine Proxies vorhanden</p>
+                        <button @click="openAddModal" class="btn btn-primary" style="margin-top: 1rem;">Ersten Proxy erstellen</button>
+                    </div>
+
+                    <div style="display: grid; gap: 1rem;">
+                        <div v-for="proxy in proxies" :key="proxy.id" class="card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                                <div style="flex: 1;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;">
+                                        <h3 style="font-size: 1.25rem; font-weight: 600;">{{ proxy.name }}</h3>
+                                        <span class="status-badge" :class="getStatusClass(proxy)">{{ getStatusText(proxy) }}</span>
+                                    </div>
+                                    <p v-if="proxy.description" style="color: var(--text-secondary); margin-bottom: 0.75rem; font-size: 0.875rem;">{{ proxy.description }}</p>
+                                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                        <div><strong>Listen:</strong> {{ proxy.listen_addr }}</div>
+                                        <div><strong>Target:</strong> {{ proxy.target_addr }}</div>
+                                        <div><strong>Uptime:</strong> {{ formatUptime(proxy.uptime_s) }}</div>
+                                        <div><strong>Anfragen:</strong> {{ proxy.requests }}</div>
+                                        <div><strong>Fehler:</strong> <span :style="{color: proxy.errors > 0 ? 'var(--error)' : 'inherit'}">{{ proxy.errors }}</span></div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                                    <button v-if="proxy.paused" @click="controlProxy(proxy.id, 'resume')" class="btn btn-success">▶️ Resume</button>
+                                    <button v-else-if="proxy.status !== 'Running'" @click="controlProxy(proxy.id, 'start')" class="btn btn-success">▶️ Start</button>
+                                    <button v-if="proxy.status === 'Running' && !proxy.paused" @click="controlProxy(proxy.id, 'pause')" class="btn btn-warning">⏸️ Pause</button>
+                                    <button v-if="proxy.status === 'Running'" @click="controlProxy(proxy.id, 'stop')" class="btn btn-secondary">⏹️ Stop</button>
+                                    <button @click="controlProxy(proxy.id, 'restart')" class="btn btn-primary">🔄 Restart</button>
+                                    <button @click="openEditModal(proxy)" class="btn btn-secondary">✏️ Edit</button>
+                                    <button @click="deleteProxy(proxy.id)" class="btn btn-danger">🗑️ Delete</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Devices -->
+                <div v-if="currentView === 'devices'">
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Verbundene Geräte</h2>
+                        <p style="color: var(--text-tertiary);">Übersicht über alle erkannten Modbus-Geräte</p>
+                    </div>
+
+                    <div v-if="devices.length === 0" style="text-align: center; padding: 4rem 2rem;">
+                        <p style="font-size: 1.25rem; color: var(--text-tertiary);">Keine Geräte verbunden</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1rem;">
+                        <div v-for="device in devices" :key="device.ip" class="device-card">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.75rem;">
+                                <div>
+                                    <h3 style="font-size: 1.125rem; font-weight: 600;">{{ device.name || 'Unbekanntes Gerät' }}</h3>
+                                    <p style="font-size: 0.875rem; color: var(--text-tertiary);">{{ device.ip }}</p>
+                                </div>
+                                <span class="status-badge status-running">Aktiv</span>
+                            </div>
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                                <div style="margin-bottom: 0.25rem;"><strong>Letzte Anfrage:</strong> {{ formatTime(device.last_seen) }}</div>
+                                <div style="margin-bottom: 0.25rem;"><strong>Anfragen:</strong> {{ device.request_count }}</div>
+                                <div><strong>Proxy:</strong> {{ getProxyName(device.proxy_id) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Logs -->
+                <div v-if="currentView === 'logs'">
+                    <div style="margin-bottom: 1.5rem;">
+                        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Live Logs</h2>
+                        <p style="color: var(--text-tertiary);">Echtzeit-Protokollierung aller Ereignisse</p>
+                    </div>
+
+                    <div class="card" style="margin-bottom: 1rem;">
+                        <div style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+                            <input v-model="logFilter" placeholder="🔍 Logs filtern..." class="input-field" style="flex: 1; min-width: 200px;">
+                            <select v-model="logLevelFilter" class="input-field" style="width: 150px;">
+                                <option value="">Alle Level</option>
+                                <option value="INFO">INFO</option>
+                                <option value="WARN">WARN</option>
+                                <option value="ERROR">ERROR</option>
+                            </select>
+                            <button @click="clearLogs" class="btn btn-secondary">🗑️ Löschen</button>
+                            <a href="/api/logs/download" target="_blank" class="btn btn-primary">📥 Download</a>
+                        </div>
+                    </div>
+
+                    <div class="log-container" id="log-container">
+                        <div v-for="(log, i) in filteredLogs" :key="i" class="log-entry" :class="'log-' + log.level.toLowerCase()">
+                            <span style="opacity: 0.5; margin-right: 0.5rem;">{{ formatTime(log.timestamp) }}</span>
+                            <span style="font-weight: 600; margin-right: 0.5rem;">[{{ log.level }}]</span>
+                            <span v-if="log.proxy_id" style="color: #3b82f6; margin-right: 0.5rem;">({{ getProxyName(log.proxy_id) }})</span>
+                            <span>{{ log.message }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings -->
+                <div v-if="currentView === 'settings'">
+                    <div style="margin-bottom: 2rem;">
+                        <h2 style="font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem;">Einstellungen</h2>
+                        <p style="color: var(--text-tertiary);">System-Konfiguration und Verwaltung</p>
+                    </div>
+
+                    <div style="display: grid; gap: 1.5rem;">
+                        <!-- System Control -->
+                        <div class="card">
+                            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">System-Steuerung</h3>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <button @click="restartSystem" class="btn btn-warning">🔄 System neu starten</button>
+                                <button @click="stopAllProxies" class="btn btn-danger">⏹️ Alle Proxies stoppen</button>
+                                <button @click="startAllProxies" class="btn btn-success">▶️ Alle Proxies starten</button>
+                            </div>
+                        </div>
+
+                        <!-- Config Management -->
+                        <div class="card">
+                            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">Konfiguration</h3>
+                            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                                <a href="/api/config/export" target="_blank" class="btn btn-primary">📤 Export Config</a>
+                                <label class="btn btn-success" style="margin: 0;">
+                                    📥 Import Config
+                                    <input type="file" @change="importConfig" style="display: none;" accept=".json">
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- System Info -->
+                        <div class="card">
+                            <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 1rem;">System-Information</h3>
+                            <div style="display: grid; gap: 0.5rem; font-size: 0.875rem; color: var(--text-secondary);">
+                                <div><strong>Version:</strong> ModBridge v1.0.0</div>
+                                <div><strong>Proxies:</strong> {{ proxies.length }}</div>
+                                <div><strong>Geräte:</strong> {{ devices.length }}</div>
+                                <div><strong>Gesamte Anfragen:</strong> {{ totalRequests }}</div>
+                                <div><strong>Gesamte Fehler:</strong> {{ totalErrors }}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Add Proxy Modal -->
-            <div v-if="showAddModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-                <div class="glass bg-white p-8 rounded-2xl w-full max-w-lg shadow-2xl">
-                    <h3 class="text-xl font-bold mb-4">Add Proxy</h3>
-                    <form @submit.prevent="addProxy">
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-1">Name</label>
-                            <input v-model="newProxy.name" type="text" class="w-full p-2 border rounded" required>
+        <!-- Modal: Add/Edit Proxy -->
+        <div v-if="showProxyModal" class="modal-backdrop" @click.self="closeProxyModal">
+            <div class="modal">
+                <h3 style="font-size: 1.5rem; font-weight: 600; margin-bottom: 1.5rem;">{{ editingProxy ? 'Proxy bearbeiten' : 'Neuer Proxy' }}</h3>
+                <form @submit.prevent="saveProxy">
+                    <div style="display: grid; gap: 1rem;">
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Name *</label>
+                            <input v-model="proxyForm.name" type="text" class="input-field" required>
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-1">Listen Address (e.g. :5020)</label>
-                            <input v-model="newProxy.listen_addr" type="text" class="w-full p-2 border rounded" required>
+                        <div>
+                            <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Beschreibung</label>
+                            <input v-model="proxyForm.description" type="text" class="input-field" placeholder="Optional">
                         </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-bold mb-1">Target Address (e.g. 1.2.3.4:502)</label>
-                            <input v-model="newProxy.target_addr" type="text" class="w-full p-2 border rounded" required>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Listen Address *</label>
+                                <input v-model="proxyForm.listen_addr" type="text" class="input-field" placeholder=":5020" required>
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Target Address *</label>
+                                <input v-model="proxyForm.target_addr" type="text" class="input-field" placeholder="192.168.1.100:502" required>
+                            </div>
                         </div>
-                        <div class="flex justify-end gap-2">
-                            <button type="button" @click="showAddModal = false" class="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
-                            <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Save</button>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Connection Timeout (s)</label>
+                                <input v-model.number="proxyForm.connection_timeout" type="number" class="input-field" min="1" max="300">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Read Timeout (s)</label>
+                                <input v-model.number="proxyForm.read_timeout" type="number" class="input-field" min="1" max="300">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Max Retries</label>
+                                <input v-model.number="proxyForm.max_retries" type="number" class="input-field" min="0" max="10">
+                            </div>
                         </div>
-                    </form>
-                </div>
+                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                            <input v-model="proxyForm.enabled" type="checkbox" id="enabled-check">
+                            <label for="enabled-check" style="font-size: 0.875rem; cursor: pointer;">Nach Speichern automatisch starten</label>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+                        <button type="button" @click="closeProxyModal" class="btn btn-secondary">Abbrechen</button>
+                        <button type="submit" class="btn btn-primary">{{ editingProxy ? 'Aktualisieren' : 'Erstellen' }}</button>
+                    </div>
+                </form>
             </div>
-
-        </main>
+        </div>
     </div>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp, ref, computed, onMounted, watch } = Vue;
 
         createApp({
             setup() {
+                // State
                 const currentView = ref('dashboard');
-                const setupRequired = ref(false);
                 const authenticated = ref(false);
+                const setupRequired = ref(false);
+                const darkMode = ref(localStorage.getItem('darkMode') === 'true');
+
+                const setupPassword = ref('');
+                const loginPassword = ref('');
+                const loginError = ref('');
+
                 const proxies = ref([]);
+                const devices = ref([]);
                 const logs = ref([]);
                 const logFilter = ref('');
                 const logLevelFilter = ref('');
-                const setupPassword = ref('');
-                const loginPassword = ref('');
-                const showAddModal = ref(false);
-                const newProxy = ref({ name: '', listen_addr: ':5020', target_addr: '127.0.0.1:502', enabled: true });
 
+                const showProxyModal = ref(false);
+                const editingProxy = ref(null);
+                const proxyForm = ref({
+                    name: '',
+                    description: '',
+                    listen_addr: ':5020',
+                    target_addr: '192.168.1.100:502',
+                    enabled: true,
+                    connection_timeout: 10,
+                    read_timeout: 30,
+                    max_retries: 3
+                });
+
+                // Computed
                 const totalErrors = computed(() => proxies.value.reduce((acc, p) => acc + p.errors, 0));
-                
+                const totalRequests = computed(() => proxies.value.reduce((acc, p) => acc + p.requests, 0));
+                const recentLogs = computed(() => logs.value.slice(-10).reverse());
+
                 const filteredLogs = computed(() => {
                     return logs.value.filter(l => {
                         if (logLevelFilter.value && l.level !== logLevelFilter.value) return false;
                         if (logFilter.value) {
                             const term = logFilter.value.toLowerCase();
-                            return l.message.toLowerCase().includes(term) || (l.proxy_id && l.proxy_id.toLowerCase().includes(term));
+                            return l.message.toLowerCase().includes(term) ||
+                                   (l.proxy_id && l.proxy_id.toLowerCase().includes(term));
                         }
                         return true;
                     });
                 });
 
+                // Methods
                 const fetchStatus = async () => {
                     try {
                         const res = await fetch('/api/status');
@@ -222,77 +688,147 @@
                         setupRequired.value = data.setup_required;
                         proxies.value = data.proxies || [];
                     } catch (e) {
-                        console.error(e);
+                        console.error('Failed to fetch status:', e);
+                    }
+                };
+
+                const fetchDevices = async () => {
+                    if (!authenticated.value) return;
+                    try {
+                        const res = await fetch('/api/devices');
+                        if (res.ok) {
+                            devices.value = await res.json();
+                        }
+                    } catch (e) {
+                        console.error('Failed to fetch devices:', e);
                     }
                 };
 
                 const doSetup = async () => {
-                    const res = await fetch('/api/setup', {
-                        method: 'POST',
-                        body: JSON.stringify({ password: setupPassword.value })
-                    });
-                    if (res.ok) {
-                        setupRequired.value = false;
-                        currentView.value = 'login';
-                    } else {
-                        alert('Setup failed');
+                    try {
+                        const res = await fetch('/api/setup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ password: setupPassword.value })
+                        });
+                        if (res.ok) {
+                            setupRequired.value = false;
+                            loginPassword.value = setupPassword.value;
+                            setupPassword.value = '';
+                            await doLogin();
+                        } else {
+                            alert('Setup fehlgeschlagen');
+                        }
+                    } catch (e) {
+                        alert('Setup-Fehler: ' + e);
                     }
                 };
 
                 const doLogin = async () => {
-                    console.log("Attempting login with password length:", loginPassword.value.length);
+                    loginError.value = '';
                     try {
                         const res = await fetch('/api/login', {
                             method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ password: loginPassword.value })
                         });
                         if (res.ok) {
-                            console.log("Login success");
                             authenticated.value = true;
-                            currentView.value = 'dashboard';
+                            loginPassword.value = '';
                             startLogStream();
+                            fetchDevices();
                         } else {
-                            console.log("Login failed status:", res.status);
-                            alert('Login failed');
+                            loginError.value = 'Falsches Passwort';
                         }
                     } catch (e) {
-                        console.log("Login error:", e);
-                        alert("Login error: " + e);
+                        loginError.value = 'Login-Fehler: ' + e;
                     }
                 };
 
                 const logout = () => {
                     document.cookie = 'session_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
                     authenticated.value = false;
-                    currentView.value = 'login';
+                    currentView.value = 'dashboard';
+                    logs.value = [];
                 };
 
-                const addProxy = async () => {
-                    const res = await fetch('/api/proxies', {
-                        method: 'POST',
-                        body: JSON.stringify(newProxy.value)
-                    });
-                    if (res.ok) {
-                        showAddModal.value = false;
-                        newProxy.value = { name: '', listen_addr: ':5020', target_addr: '127.0.0.1:502', enabled: true };
-                        fetchStatus();
-                    } else {
-                        alert('Failed to add proxy');
+                const openAddModal = () => {
+                    editingProxy.value = null;
+                    proxyForm.value = {
+                        name: '',
+                        description: '',
+                        listen_addr: ':5020',
+                        target_addr: '192.168.1.100:502',
+                        enabled: true,
+                        connection_timeout: 10,
+                        read_timeout: 30,
+                        max_retries: 3
+                    };
+                    showProxyModal.value = true;
+                };
+
+                const openEditModal = (proxy) => {
+                    editingProxy.value = proxy;
+                    proxyForm.value = {
+                        id: proxy.id,
+                        name: proxy.name,
+                        description: proxy.description || '',
+                        listen_addr: proxy.listen_addr,
+                        target_addr: proxy.target_addr,
+                        enabled: proxy.enabled,
+                        paused: proxy.paused,
+                        connection_timeout: proxy.connection_timeout || 10,
+                        read_timeout: proxy.read_timeout || 30,
+                        max_retries: proxy.max_retries || 3
+                    };
+                    showProxyModal.value = true;
+                };
+
+                const closeProxyModal = () => {
+                    showProxyModal.value = false;
+                    editingProxy.value = null;
+                };
+
+                const saveProxy = async () => {
+                    try {
+                        const method = editingProxy.value ? 'PUT' : 'POST';
+                        const res = await fetch('/api/proxies', {
+                            method: method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(proxyForm.value)
+                        });
+                        if (res.ok) {
+                            closeProxyModal();
+                            await fetchStatus();
+                        } else {
+                            alert('Fehler beim Speichern des Proxies');
+                        }
+                    } catch (e) {
+                        alert('Fehler: ' + e);
                     }
                 };
 
                 const controlProxy = async (id, action) => {
-                    await fetch('/api/proxies/control', {
-                        method: 'POST',
-                        body: JSON.stringify({ id, action })
-                    });
-                    fetchStatus();
+                    try {
+                        await fetch('/api/proxies/control', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ id, action })
+                        });
+                        await fetchStatus();
+                    } catch (e) {
+                        console.error('Control error:', e);
+                    }
                 };
 
                 const deleteProxy = async (id) => {
-                    if(!confirm('Are you sure?')) return;
-                    await fetch(`/api/proxies?id=${id}`, { method: 'DELETE' });
-                    fetchStatus();
+                    if (!confirm('Möchten Sie diesen Proxy wirklich löschen?')) return;
+                    try {
+                        await fetch(`/api/proxies?id=${id}`, { method: 'DELETE' });
+                        await fetchStatus();
+                    } catch (e) {
+                        alert('Fehler beim Löschen: ' + e);
+                    }
                 };
 
                 const startLogStream = () => {
@@ -300,77 +836,130 @@
                     evtSource.onmessage = (event) => {
                         const log = JSON.parse(event.data);
                         logs.value.push(log);
-                        if (logs.value.length > 200) logs.value.shift();
-                        // Scroll to bottom
+                        if (logs.value.length > 500) logs.value.shift();
                         setTimeout(() => {
                             const container = document.getElementById('log-container');
-                            if(container) container.scrollTop = container.scrollHeight;
+                            if (container) container.scrollTop = container.scrollHeight;
                         }, 10);
                     };
                 };
 
-                const formatUptime = (s) => {
-                    if (s < 60) return `${Math.floor(s)}s`;
-                    if (s < 3600) return `${Math.floor(s/60)}m`;
-                    return `${Math.floor(s/3600)}h`;
+                const clearLogs = () => {
+                    logs.value = [];
                 };
 
-                const formatTime = (ts) => new Date(ts).toLocaleTimeString();
-                
-                const logColor = (level) => {
-                    if (level === 'ERROR') return 'border-red-500 text-red-300';
-                    if (level === 'WARN') return 'border-yellow-500 text-yellow-300';
-                    return 'border-green-500 text-gray-300';
+                const restartSystem = async () => {
+                    if (!confirm('System wirklich neu starten? Alle Verbindungen werden kurz unterbrochen.')) return;
+                    try {
+                        await fetch('/api/system/restart', { method: 'POST' });
+                        alert('System wird neu gestartet...');
+                        setTimeout(() => window.location.reload(), 3000);
+                    } catch (e) {
+                        alert('Neustart-Fehler: ' + e);
+                    }
                 };
 
-                const proxyName = (id) => {
-                    const p = proxies.value.find(x => x.id === id);
-                    return p ? p.name : id;
+                const stopAllProxies = async () => {
+                    if (!confirm('Alle Proxies stoppen?')) return;
+                    for (const proxy of proxies.value.filter(p => p.status === 'Running')) {
+                        await controlProxy(proxy.id, 'stop');
+                    }
+                };
+
+                const startAllProxies = async () => {
+                    for (const proxy of proxies.value.filter(p => p.status !== 'Running' && !p.paused)) {
+                        await controlProxy(proxy.id, 'start');
+                    }
                 };
 
                 const importConfig = async (event) => {
                     const file = event.target.files[0];
                     if (!file) return;
-                    
-                    if(!confirm('This will overwrite current configuration. Continue?')) {
+                    if (!confirm('Konfiguration importieren? Dies überschreibt die aktuelle Konfiguration.')) {
                         event.target.value = '';
                         return;
                     }
-
                     try {
                         const res = await fetch('/api/config/import', {
                             method: 'POST',
                             body: file
                         });
-                        
                         if (res.ok) {
-                            alert('Configuration imported successfully.');
-                            fetchStatus();
+                            alert('Konfiguration erfolgreich importiert.');
+                            await fetchStatus();
                         } else {
-                            const txt = await res.text();
-                            alert('Import failed: ' + txt);
+                            alert('Import fehlgeschlagen: ' + await res.text());
                         }
                     } catch (e) {
-                        alert('Import error: ' + e);
+                        alert('Import-Fehler: ' + e);
                     }
                     event.target.value = '';
                 };
 
+                const toggleDarkMode = () => {
+                    darkMode.value = !darkMode.value;
+                    localStorage.setItem('darkMode', darkMode.value);
+                    updateTheme();
+                };
+
+                const updateTheme = () => {
+                    document.documentElement.setAttribute('data-theme', darkMode.value ? 'dark' : 'light');
+                };
+
+                const formatUptime = (s) => {
+                    if (s < 60) return `${Math.floor(s)}s`;
+                    if (s < 3600) return `${Math.floor(s / 60)}m`;
+                    if (s < 86400) return `${Math.floor(s / 3600)}h`;
+                    return `${Math.floor(s / 86400)}d`;
+                };
+
+                const formatTime = (ts) => new Date(ts).toLocaleTimeString('de-DE');
+
+                const getStatusClass = (proxy) => {
+                    if (proxy.paused) return 'status-paused';
+                    if (proxy.status === 'Running') return 'status-running';
+                    if (proxy.status === 'Error') return 'status-error';
+                    return 'status-stopped';
+                };
+
+                const getStatusText = (proxy) => {
+                    if (proxy.paused) return 'Pausiert';
+                    if (proxy.status === 'Running') return 'Aktiv';
+                    if (proxy.status === 'Error') return 'Fehler';
+                    return 'Gestoppt';
+                };
+
+                const getProxyName = (id) => {
+                    const p = proxies.value.find(x => x.id === id);
+                    return p ? p.name : id;
+                };
+
+                // Lifecycle
                 onMounted(() => {
+                    updateTheme();
                     fetchStatus();
                     setInterval(fetchStatus, 2000);
-                    // Check if we have a cookie, if so assume logged in or check via API (todo)
+                    setInterval(fetchDevices, 5000);
+
                     if (document.cookie.includes('session_token')) {
                         authenticated.value = true;
                         startLogStream();
+                        fetchDevices();
                     }
                 });
 
                 return {
-                    currentView, setupRequired, authenticated, proxies, logs, filteredLogs, logFilter, logLevelFilter,
-                    setupPassword, loginPassword, showAddModal, newProxy, totalErrors,
-                    doSetup, doLogin, logout, addProxy, controlProxy, deleteProxy,
-                    formatUptime, formatTime, logColor, proxyName, importConfig
+                    currentView, authenticated, setupRequired, darkMode,
+                    setupPassword, loginPassword, loginError,
+                    proxies, devices, logs, logFilter, logLevelFilter,
+                    showProxyModal, editingProxy, proxyForm,
+                    totalErrors, totalRequests, recentLogs, filteredLogs,
+                    fetchStatus, doSetup, doLogin, logout,
+                    openAddModal, openEditModal, closeProxyModal, saveProxy,
+                    controlProxy, deleteProxy, clearLogs,
+                    restartSystem, stopAllProxies, startAllProxies, importConfig,
+                    toggleDarkMode, formatUptime, formatTime,
+                    getStatusClass, getStatusText, getProxyName, fetchDevices
                 };
             }
         }).mount('#app');
