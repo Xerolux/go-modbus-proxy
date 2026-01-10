@@ -113,6 +113,10 @@
                 <label class="block text-xs font-medium text-gray-500">Max Retries</label>
                 <input v-model.number="proxy.max_retries" @input="markDirty(proxy)" type="number" class="mt-1 block w-full rounded border-gray-300 sm:text-sm p-1 border">
               </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-500">Max Read Size (0=unlimited)</label>
+                <input v-model.number="proxy.max_read_size" @input="markDirty(proxy)" type="number" class="mt-1 block w-full rounded border-gray-300 sm:text-sm p-1 border">
+              </div>
            </div>
 
         </div>
@@ -140,6 +144,7 @@ const addProxy = () => {
     connection_timeout: 10,
     read_timeout: 30,
     max_retries: 3,
+    max_read_size: 0,
     description: '',
     _isNew: true, // Internal flag
     _showAdvanced: false

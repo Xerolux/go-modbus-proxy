@@ -18,6 +18,7 @@ type ProxyConfig struct {
 	ReadTimeout       int    `json:"read_timeout"`       // New: Read timeout in seconds (default: 30)
 	MaxRetries        int    `json:"max_retries"`        // New: Max retry attempts (default: 3)
 	Description       string `json:"description"`        // New: User description
+	MaxReadSize       int    `json:"max_read_size"`      // New: Max registers to read in one request (0 = unlimited)
 }
 
 // Config holds the global configuration.
