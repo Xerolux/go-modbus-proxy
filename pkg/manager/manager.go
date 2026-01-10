@@ -52,7 +52,7 @@ func (m *Manager) AddProxy(cfg config.ProxyConfig, save bool) error {
 		old.Stop()
 	}
 
-	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, m.log, m.deviceTracker)
+	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, cfg.MaxReadSize, m.log, m.deviceTracker)
 	m.proxies[cfg.ID] = p
 
 	if save {
@@ -208,7 +208,7 @@ func (m *Manager) UpdateProxy(cfg config.ProxyConfig) error {
 	m.proxies[cfg.ID].Stop()
 
 	// Create new proxy with updated config
-	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, m.log, m.deviceTracker)
+	p := proxy.NewProxyInstance(cfg.ID, cfg.Name, cfg.ListenAddr, cfg.TargetAddr, cfg.MaxReadSize, m.log, m.deviceTracker)
 	m.proxies[cfg.ID] = p
 
 	// Start if it was enabled and not paused
