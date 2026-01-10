@@ -17,9 +17,15 @@
                     :value="getWidgetValue(widget)"
                     :unit="widget.unit"
                 />
-                 <div class="absolute top-1 right-1 cursor-pointer text-gray-500 hover:text-red-500 z-10" @click="removeWidget(widget.id)">
+                 <button
+                    type="button"
+                    class="absolute top-1 right-1 cursor-pointer text-gray-500 hover:text-red-500 z-10 focus:outline-none focus:ring-2 focus:ring-red-500 rounded p-1 transition-colors"
+                    @click="removeWidget(widget.id)"
+                    aria-label="Remove widget"
+                    title="Remove widget"
+                >
                     <i class="pi pi-times"></i>
-                </div>
+                </button>
             </div>
         </Teleport>
 
