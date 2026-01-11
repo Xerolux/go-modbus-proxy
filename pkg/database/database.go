@@ -320,8 +320,8 @@ func (db *DB) GetDeviceStats() (map[string]interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"total_devices":   totalDevices,
-		"total_requests":  totalRequests,
-		"unique_proxies":  uniqueProxies,
+		"total_devices":  totalDevices,
+		"total_requests": totalRequests,
+		"unique_proxies": uniqueProxies,
 	}, nil
 }

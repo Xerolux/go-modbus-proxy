@@ -11,9 +11,9 @@ const (
 	FuncReadInputRegisters   = 0x04
 
 	// Modbus Exceptions
-	ExceptionIllegalFunction = 0x01
+	ExceptionIllegalFunction    = 0x01
 	ExceptionIllegalDataAddress = 0x02
-	ExceptionIllegalDataValue = 0x03
+	ExceptionIllegalDataValue   = 0x03
 	ExceptionSlaveDeviceFailure = 0x04
 )
 
@@ -75,6 +75,10 @@ func ParseReadResponse(frame []byte) ([]byte, error) {
 // CreateReadResponse constructs a Modbus TCP read response frame.
 func CreateReadResponse(txID uint16, unitID uint8, fc uint8, data []byte) []byte {
 	byteCount := len(data)
+	// Validate byteCount to prevent overflow
+	if byteCount > 255 {
+		byteCount = 255
+	}
 	length := 3 + byteCount // UnitID(1) + FC(1) + ByteCount(1) + Data(N)
 	frame := make([]byte, 6+length)
 
@@ -84,8 +88,8 @@ func CreateReadResponse(txID uint16, unitID uint8, fc uint8, data []byte) []byte
 	binary.BigEndian.PutUint16(frame[4:6], uint16(length))
 	frame[6] = unitID
 	frame[7] = fc
-	frame[8] = uint8(byteCount)
-	copy(frame[9:], data)
+	frame[8] = uint8(byteCount) // Safe now due to validation above
+	copy(frame[9:], data[:byteCount])
 	return frame
 }
 

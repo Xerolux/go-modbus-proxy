@@ -27,9 +27,9 @@ type ProxyInstance struct {
 	ReadTimeout       time.Duration
 	MaxRetries        int
 
-	listener   net.Listener
-	connPool   *pool.Pool
-	targetMu   sync.Mutex
+	listener net.Listener
+	connPool *pool.Pool
+	targetMu sync.Mutex
 
 	log           *logger.Logger
 	deviceTracker *devices.Tracker
@@ -56,9 +56,9 @@ func NewProxyInstance(id, name, listen, target string, maxReadSize int, l *logge
 		ListenAddr:        listen,
 		TargetAddr:        target,
 		MaxReadSize:       maxReadSize,
-		ConnectionTimeout: 5 * time.Second,  // Default
-		ReadTimeout:       5 * time.Second,  // Default
-		MaxRetries:        3,                // Default
+		ConnectionTimeout: 5 * time.Second, // Default
+		ReadTimeout:       5 * time.Second, // Default
+		MaxRetries:        3,               // Default
 		log:               l,
 		deviceTracker:     tracker,
 		Stats:             Stats{Status: "Stopped"},

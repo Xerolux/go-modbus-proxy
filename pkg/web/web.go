@@ -3,10 +3,10 @@ package web
 import (
 	"embed"
 	"io/fs"
-	"net/http"
-	"strings"
-	"path/filepath"
 	"mime"
+	"net/http"
+	"path/filepath"
+	"strings"
 )
 
 //go:embed dist/*
