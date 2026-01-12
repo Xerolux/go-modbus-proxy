@@ -21,7 +21,7 @@ RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
     -o modbridge ./main.go
 
 # Final stage - use alpine for health checks and minimal size
-FROM alpine:3.19
+FROM alpine:3.23
 
 LABEL org.opencontainers.image.title="ModBridge" \
       org.opencontainers.image.description="Modbus TCP Proxy Manager" \
