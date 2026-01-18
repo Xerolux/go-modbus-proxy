@@ -1,57 +1,75 @@
 <template>
-    <div class="p-4 flex flex-col gap-4">
-        <h1 class="text-2xl font-bold mb-4">Proxy Control</h1>
-
-        <div v-if="loading" class="flex justify-center">
-            <i class="pi pi-spin pi-spinner text-4xl"></i>
+     <div class="p-4 flex flex-col gap-4">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl font-bold">Proxy Control</h1>
+            <div class="flex gap-2">
+                <Button
+                    icon="pi pi-play"
+                    severity="success"
+                    label="Start All"
+                    @click="controlAllProxies('start_all')"
+                    class="text-xs sm:text-sm"
+                />
+                <Button
+                    icon="pi pi-stop"
+                    severity="danger"
+                    label="Stop All"
+                    @click="controlAllProxies('stop_all')"
+                    class="text-xs sm:text-sm"
+                />
+            </div>
         </div>
 
-        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card v-for="proxy in proxies" :key="proxy.id" class="bg-gray-800 text-white">
-                <template #title>
-                    <div class="flex justify-between items-center">
-                        <span class="text-lg truncate" :title="proxy.name">{{ proxy.name }}</span>
-                        <Tag :severity="getSeverity(proxy.status)" :value="proxy.status" />
-                    </div>
-                </template>
-                <template #content>
-                    <div class="flex flex-col gap-3">
-                        <div class="text-gray-400 text-sm">{{ proxy.description || 'No description' }}</div>
-                        <div class="text-sm">Listen: {{ proxy.listen_addr }}</div>
-                        <div class="text-sm">Target: {{ proxy.target_addr }}</div>
+         <div v-if="loading" class="flex justify-center">
+             <i class="pi pi-spin pi-spinner text-4xl"></i>
+         </div>
 
-                        <div class="grid grid-cols-3 gap-2 mt-2">
-                             <Button
-                                icon="pi pi-play"
-                                severity="success"
-                                label="Start"
-                                :disabled="proxy.status === 'Running'"
-                                @click="controlProxy(proxy.id, 'start')"
-                                class="text-xs sm:text-sm"
-                             />
-                             <Button
-                                icon="pi pi-stop"
-                                severity="danger"
-                                label="Stop"
-                                :disabled="proxy.status === 'Stopped' || proxy.status === 'Error'"
-                                @click="controlProxy(proxy.id, 'stop')"
-                                class="text-xs sm:text-sm"
-                             />
+         <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+             <Card v-for="proxy in proxies" :key="proxy.id" class="bg-gray-800 text-white">
+                 <template #title>
+                     <div class="flex justify-between items-center">
+                         <span class="text-lg truncate" :title="proxy.name">{{ proxy.name }}</span>
+                         <Tag :severity="getSeverity(proxy.status)" :value="proxy.status" />
+                     </div>
+                 </template>
+                 <template #content>
+                     <div class="flex flex-col gap-3">
+                         <div class="text-gray-400 text-sm">{{ proxy.description || 'No description' }}</div>
+                         <div class="text-sm">Listen: {{ proxy.listen_addr }}</div>
+                         <div class="text-sm">Target: {{ proxy.target_addr }}</div>
+
+                         <div class="grid grid-cols-3 gap-2 mt-2">
+                              <Button
+                                 icon="pi pi-play"
+                                 severity="success"
+                                 label="Start"
+                                 :disabled="proxy.status === 'Running'"
+                                 @click="controlProxy(proxy.id, 'start')"
+                                 class="text-xs sm:text-sm"
+                              />
+                              <Button
+                                 icon="pi pi-stop"
+                                 severity="danger"
+                                 label="Stop"
+                                 :disabled="proxy.status === 'Stopped' || proxy.status === 'Error'"
+                                 @click="controlProxy(proxy.id, 'stop')"
+                                 class="text-xs sm:text-sm"
+                              />
                                <Button
-                                icon="pi pi-refresh"
-                                severity="info"
-                                label="Restart"
-                                :disabled="proxy.status === 'Stopped'"
-                                @click="controlProxy(proxy.id, 'restart')"
-                                class="text-xs sm:text-sm"
-                             />
-                        </div>
-                    </div>
-                </template>
-            </Card>
-        </div>
-         <Toast />
-    </div>
+                                 icon="pi pi-refresh"
+                                 severity="info"
+                                 label="Restart"
+                                 :disabled="proxy.status === 'Stopped'"
+                                 @click="controlProxy(proxy.id, 'restart')"
+                                 class="text-xs sm:text-sm"
+                              />
+                         </div>
+                     </div>
+                 </template>
+             </Card>
+         </div>
+          <Toast />
+     </div>
 </template>
 
 <script setup>
@@ -126,6 +144,16 @@ const controlProxy = async (id, action) => {
     try {
         await axios.post('/api/proxies/control', { id, action });
         toast.add({ severity: 'success', summary: 'Success', detail: `Proxy ${action} command sent`, life: 3000 });
+        setTimeout(fetchProxies, 500);
+    } catch (e) {
+        toast.add({ severity: 'error', summary: 'Error', detail: e.response?.data?.error || e.message, life: 5000 });
+    }
+};
+
+const controlAllProxies = async (action) => {
+    try {
+        await axios.post('/api/proxies/control', { action: action === 'start_all' ? 'start_all' : 'stop_all' });
+        toast.add({ severity: 'success', summary: 'Success', detail: `All proxies ${action.replace('_all', '')} command sent`, life: 3000 });
         setTimeout(fetchProxies, 500);
     } catch (e) {
         toast.add({ severity: 'error', summary: 'Error', detail: e.response?.data?.error || e.message, life: 5000 });

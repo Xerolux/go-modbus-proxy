@@ -1,62 +1,65 @@
 <script setup>
- import { ref, onMounted, onUnmounted } from "vue";
- import { useRouter } from 'vue-router'
- import { useAuthStore } from "../stores/auth";
- import Menubar from 'primevue/menubar';
- import Button from 'primevue/button';
- import Sidebar from 'primevue/sidebar';
+  import { ref, onMounted, onUnmounted } from "vue";
+  import { useRouter } from 'vue-router'
+  import { useAuthStore } from "../stores/auth";
+  import { useAppStore } from "../stores/appStore";
+  import Menubar from 'primevue/menubar';
+  import Button from 'primevue/button';
+  import Sidebar from 'primevue/sidebar';
+  import InputSwitch from 'primevue/inputswitch';
 
- const router = useRouter();
- const auth = useAuthStore();
+  const router = useRouter();
+  const auth = useAuthStore();
+  const appStore = useAppStore();
 
- const mobileMenuVisible = ref(false);
- const isMobile = ref(false);
+  const mobileMenuVisible = ref(false);
+  const isMobile = ref(false);
 
- const navigate = (path) => {
-     router.push(path);
-     mobileMenuVisible.value = false;
- };
+  const navigate = (path) => {
+      router.push(path);
+      mobileMenuVisible.value = false;
+  };
 
- const items = ref([
-     {
-         label: 'Dashboard',
-         icon: 'pi pi-home',
-         command: () => navigate('/')
-     },
-     {
-         label: 'Control',
-         icon: 'pi pi-sliders-h',
-         command: () => navigate('/control')
-     },
-     {
-         label: 'Logs',
-         icon: 'pi pi-list',
-         command: () => navigate('/logs')
-     },
-     {
-         label: 'Settings',
-         icon: 'pi pi-cog',
-         command: () => navigate('/config')
-     }
- ]);
+  const items = ref([
+      {
+          label: 'Dashboard',
+          icon: 'pi pi-home',
+          command: () => navigate('/')
+      },
+      {
+          label: 'Control',
+          icon: 'pi pi-sliders-h',
+          command: () => navigate('/control')
+      },
+      {
+          label: 'Logs',
+          icon: 'pi pi-list',
+          command: () => navigate('/logs')
+      },
+      {
+          label: 'Settings',
+          icon: 'pi pi-cog',
+          command: () => navigate('/config')
+      }
+  ]);
 
- const logout = async () => {
-     await auth.logout();
-     router.push('/login');
- }
+  const logout = async () => {
+      await auth.logout();
+      router.push('/login');
+  }
 
- const checkMobile = () => {
-     isMobile.value = window.innerWidth < 768;
- };
+  const checkMobile = () => {
+      isMobile.value = window.innerWidth < 768;
+  };
 
- onMounted(() => {
-     checkMobile();
-     window.addEventListener('resize', checkMobile);
- });
+  onMounted(() => {
+      checkMobile();
+      window.addEventListener('resize', checkMobile);
+  });
 
- onUnmounted(() => {
-     window.removeEventListener('resize', checkMobile);
- });
+  onUnmounted(() => {
+      window.removeEventListener('resize', checkMobile);
+  });
 </script>
 
 <template>
@@ -74,11 +77,15 @@
                     <span>{{ item.label }}</span>
                 </a>
             </template>
-            <template #end>
-                <div class="flex items-center gap-2">
-                    <Button label="Logout" icon="pi pi-power-off" severity="danger" text @click="logout" />
-                </div>
-            </template>
+             <template #end>
+                 <div class="flex items-center gap-2">
+                     <div class="flex items-center gap-2 px-3">
+                         <i :class="appStore.darkMode ? 'pi pi-moon' : 'pi pi-sun'"></i>
+                         <InputSwitch v-model="appStore.darkMode" @change="appStore.toggleDarkMode" />
+                     </div>
+                     <Button label="Logout" icon="pi pi-power-off" severity="danger" text @click="logout" />
+                 </div>
+             </template>
         </Menubar>
 
         <Sidebar v-model:visible="mobileMenuVisible" :baseZIndex="10000">

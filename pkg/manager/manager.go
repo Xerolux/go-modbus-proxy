@@ -322,6 +322,27 @@ func (m *Manager) StopAll() {
 	}
 }
 
+// StartAll starts all enabled proxies.
+func (m *Manager) StartAll() {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+
+	cfg := m.cfgMgr.Get()
+	cfgMap := make(map[string]config.ProxyConfig)
+	for _, pc := range cfg.Proxies {
+		cfgMap[pc.ID] = pc
+	}
+
+	for _, p := range m.proxies {
+		pCfg := cfgMap[p.ID]
+		if pCfg.Enabled && !pCfg.Paused && p.Stats.Status != "Running" {
+			if err := p.Start(); err != nil {
+				m.log.Error(p.ID, fmt.Sprintf("Failed to start: %v", err))
+			}
+		}
+	}
+}
+
 // GetDevices returns all tracked devices.
 func (m *Manager) GetDevices() []devices.Device {
 	return m.deviceTracker.GetDevices()

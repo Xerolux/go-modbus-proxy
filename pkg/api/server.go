@@ -7,6 +7,7 @@ import (
 	"modbusproxy/pkg/config"
 	"modbusproxy/pkg/logger"
 	"modbusproxy/pkg/manager"
+	"modbusproxy/pkg/metrics"
 	"modbusproxy/pkg/middleware"
 	"net/http"
 	"time"
@@ -25,6 +26,7 @@ type Server struct {
 	rateLimiter *middleware.RateLimiter
 	csrf        *middleware.CSRFMiddleware
 	validator   *middleware.Validator
+	metrics     *metrics.Metrics
 }
 
 // NewServer creates a new API server.
@@ -46,6 +48,7 @@ func NewServer(cfg *config.Manager, mgr *manager.Manager, a *auth.Authenticator,
 		rateLimiter: rateLimiter,
 		csrf:        csrfMW,
 		validator:   validator,
+		metrics:     metrics.NewMetrics(),
 	}
 }
 
@@ -68,7 +71,9 @@ func (s *Server) Routes(mux *http.ServeMux) {
 
 	// Public routes
 	mux.HandleFunc("/api/health", publicMW(s.handleHealth))
+	mux.HandleFunc("/api/ready", publicMW(s.handleReady))
 	mux.HandleFunc("/api/status", publicMW(s.handleStatus))
+	mux.HandleFunc("/api/metrics", s.cors.Middleware(s.handleMetrics))
 	mux.HandleFunc("/api/login", s.cors.Middleware(s.security.Middleware(s.handleLogin)))
 	mux.HandleFunc("/api/setup", s.cors.Middleware(s.security.Middleware(s.handleSetup)))
 
@@ -93,6 +98,35 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(map[string]string{
 		"status": "ok",
 	})
+}
+
+// handleReady is a readiness check endpoint.
+func (s *Server) handleReady(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	ready := map[string]interface{}{
+		"ready": true,
+		"checks": map[string]interface{}{
+			"server": "ok",
+		},
+	}
+
+	// Basic readiness check - server is ready if it's running
+	// More sophisticated checks can be added here (database, modbus targets, etc.)
+	statusCode := http.StatusOK
+
+	if !ready["ready"].(bool) {
+		statusCode = http.StatusServiceUnavailable
+	}
+
+	w.WriteHeader(statusCode)
+	_ = json.NewEncoder(w).Encode(ready)
+}
+
+// handleMetrics returns Prometheus metrics.
+func (s *Server) handleMetrics(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+	w.Write([]byte(s.metrics.GetPrometheusMetrics()))
 }
 
 func (s *Server) handleStatus(w http.ResponseWriter, r *http.Request) {
@@ -286,7 +320,7 @@ func (s *Server) handleProxyControl(w http.ResponseWriter, r *http.Request) {
 
 	var req struct {
 		ID     string `json:"id"`
-		Action string `json:"action"` // start, stop, restart, pause, resume
+		Action string `json:"action"` // start, stop, restart, pause, resume, start_all, stop_all
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -307,6 +341,10 @@ func (s *Server) handleProxyControl(w http.ResponseWriter, r *http.Request) {
 		err = s.mgr.PauseProxy(req.ID)
 	case "resume":
 		err = s.mgr.ResumeProxy(req.ID)
+	case "start_all":
+		s.mgr.StartAll()
+	case "stop_all":
+		s.mgr.StopAll()
 	default:
 		err = fmt.Errorf("unknown action")
 	}

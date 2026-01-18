@@ -11,6 +11,12 @@ export const useAppStore = defineStore('app', () => {
 
   const isLoading = ref(false);
   const error = ref(null);
+  const darkMode = ref(localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches));
+
+  const toggleDarkMode = () => {
+    darkMode.value = !darkMode.value;
+    localStorage.setItem('theme', darkMode.value ? 'dark' : 'light');
+  };
 
   const fetchProxies = async () => {
     try {
@@ -140,6 +146,8 @@ export const useAppStore = defineStore('app', () => {
     status,
     isLoading,
     error,
+    darkMode,
+    toggleDarkMode,
     fetchProxies,
     addProxy,
     updateProxy,
