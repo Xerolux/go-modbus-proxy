@@ -8,31 +8,31 @@ import (
 
 // BatchConfig defines batching behavior.
 type BatchConfig struct {
-	BatchSize      int           // Max requests in one batch
-	BatchTimeout  time.Duration // Max time to wait before flushing
-	MaxPending    int           // Max pending batches
+	BatchSize    int           // Max requests in one batch
+	BatchTimeout time.Duration // Max time to wait before flushing
+	MaxPending   int           // Max pending batches
 }
 
 // BatchProcessor processes batches of items.
 type BatchProcessor struct {
-	config     BatchConfig
-	processor  func([]interface{}) error
-	queue      chan interface{}
-	batches    chan []interface{}
-	ctx        context.Context
-	cancel     context.CancelFunc
-	wg         sync.WaitGroup
-	mu         sync.Mutex
-	stats      BatchStats
+	config    BatchConfig
+	processor func([]interface{}) error
+	queue     chan interface{}
+	batches   chan []interface{}
+	ctx       context.Context
+	cancel    context.CancelFunc
+	wg        sync.WaitGroup
+	mu        sync.Mutex
+	stats     BatchStats
 }
 
 // BatchStats tracks batching statistics.
 type BatchStats struct {
 	ProcessedBatches int64
 	ProcessedItems   int64
-	FailedBatches   int64
-	FailedItems     int64
-	AvgBatchSize    float64
+	FailedBatches    int64
+	FailedItems      int64
+	AvgBatchSize     float64
 }
 
 // NewBatchProcessor creates a new batch processor.
@@ -58,7 +58,7 @@ func (bp *BatchProcessor) Start() {
 	go bp.flushWorker()
 }
 
-// Stop gracefully shuts down the processor.
+// Stop gracefully shuts down processor.
 func (bp *BatchProcessor) Stop() {
 	bp.cancel()
 	bp.wg.Wait()
@@ -68,9 +68,7 @@ func (bp *BatchProcessor) Stop() {
 func (bp *BatchProcessor) Add(item interface{}) {
 	select {
 	case bp.queue <- item:
-		// Item added to queue
 	case <-bp.ctx.Done():
-		// Processor is shutting down
 	}
 }
 
@@ -95,7 +93,6 @@ func (bp *BatchProcessor) batchWorker() {
 				batchTimer.Reset(bp.config.BatchTimeout)
 			}
 		case <-batchTimer.C:
-			// Timeout, flush current batch even if not full
 			if len(currentBatch) > 0 {
 				batchTimer.Stop()
 				bp.mu.Lock()
@@ -105,7 +102,6 @@ func (bp *BatchProcessor) batchWorker() {
 				batchTimer.Reset(bp.config.BatchTimeout)
 			}
 		case <-bp.ctx.Done():
-			// Flush remaining items before shutdown
 			if len(currentBatch) > 0 {
 				bp.batches <- currentBatch
 			}
@@ -136,7 +132,6 @@ func (bp *BatchProcessor) flushWorker() {
 				}
 				bp.mu.Unlock()
 			}
-		}
 		case <-bp.ctx.Done():
 			return
 		}

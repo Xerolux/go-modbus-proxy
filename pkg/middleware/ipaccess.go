@@ -9,33 +9,33 @@ import (
 
 // IPAccessConfig defines access control configuration.
 type IPAccessConfig struct {
-	Whitelist     []string
-	Blacklist     []string
-	EnableCheck   bool
-	BanDuration  time.Duration
+	Whitelist   []string
+	Blacklist   []string
+	EnableCheck bool
+	BanDuration time.Duration
 }
 
 // IPAccessControl provides IP-based access control.
 type IPAccessControl struct {
 	config IPAccessConfig
 	mu     sync.RWMutex
-	banned  map[string]time.Time
-	stats   IPAccessStats
+	banned map[string]time.Time
+	stats  IPAccessStats
 }
 
 // IPAccessStats tracks access control statistics.
 type IPAccessStats struct {
 	BlockedRequests int64
 	AllowedRequests int64
-	TotalRequests    int64
+	TotalRequests   int64
 }
 
 // NewIPAccessControl creates a new IP access controller.
 func NewIPAccessControl(config IPAccessConfig) *IPAccessControl {
 	ctl := &IPAccessControl{
 		config: config,
-		banned:  make(map[string]time.Time),
-		stats:   IPAccessStats{},
+		banned: make(map[string]time.Time),
+		stats:  IPAccessStats{},
 	}
 
 	// Initialize from config
@@ -83,12 +83,9 @@ func (ctl *IPAccessControl) Check(ip string) bool {
 				return true
 			}
 		}
-		}
-		return false
 	}
 
-	ctl.stats.TotalRequests++
-	return true
+	return false
 }
 
 // Ban adds an IP to the blacklist temporarily.
@@ -151,9 +148,9 @@ func (ctl *IPAccessControl) GetStats() IPAccessStats {
 	defer ctl.mu.RUnlock()
 
 	return IPAccessStats{
-		BlockedRequests:  ctl.stats.BlockedRequests,
-		AllowedRequests:  ctl.stats.AllowedRequests,
-		TotalRequests:    ctl.stats.TotalRequests,
+		BlockedRequests: ctl.stats.BlockedRequests,
+		AllowedRequests: ctl.stats.AllowedRequests,
+		TotalRequests:   ctl.stats.TotalRequests,
 	}
 }
 

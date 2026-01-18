@@ -4,13 +4,6 @@ import (
 	"errors"
 	"sync"
 	"time"
-
-	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrUserExists   = errors.New("user already exists")
-	ErrUserNotFound = errors.New("user not found")
 )
 
 // UserRole defines user permission levels.
@@ -51,7 +44,7 @@ func (s *UserStore) AddUser(user *User) error {
 	defer s.mu.Unlock()
 
 	if _, exists := s.users[user.ID]; exists {
-		return ErrUserExists
+		return errors.New("user already exists")
 	}
 
 	s.users[user.ID] = user
@@ -106,7 +99,7 @@ func (s *UserStore) UpdateUser(user *User) error {
 	defer s.mu.Unlock()
 
 	if _, exists := s.users[user.ID]; !exists {
-		return ErrUserNotFound
+		return errors.New("user not found")
 	}
 
 	s.users[user.ID] = user
@@ -119,7 +112,6 @@ func (u *User) HasPermission(requiredRole UserRole) bool {
 		return true
 	}
 
-	// Role hierarchy
 	roleHierarchy := map[UserRole]int{
 		RoleAdmin:    4,
 		RoleEditor:   3,
