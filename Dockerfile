@@ -15,7 +15,7 @@ COPY . .
 
 # Build the application with optimizations
 # CGO is required for sqlite3
-RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build \
+RUN CGO_ENABLED=1 go build \
     -ldflags="-s -w" \
     -trimpath \
     -o modbridge ./main.go
