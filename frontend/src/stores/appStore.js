@@ -138,23 +138,44 @@ export const useAppStore = defineStore('app', () => {
           error.value = e.message;
           return false;
       }
-  };
+   };
+
+  const exportDeviceHistory = async (format = 'json') => {
+      try {
+          const res = await fetch(`/api/devices/history?format=${format}`);
+          if (!res.ok) throw new Error('Failed to export');
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `device_history.${format}`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          return true;
+      } catch (e) {
+          error.value = e.message;
+          return false;
+      }
+   };
 
   return {
-    proxies,
-    webPort,
-    status,
-    isLoading,
-    error,
-    darkMode,
-    toggleDarkMode,
-    fetchProxies,
-    addProxy,
-    updateProxy,
-    deleteProxy,
-    fetchWebPort,
-    saveWebPort,
-    fetchStatus,
-    restartSystem
-  };
+     proxies,
+     webPort,
+     status,
+     isLoading,
+     error,
+     darkMode,
+     toggleDarkMode,
+     fetchProxies,
+     addProxy,
+     updateProxy,
+     deleteProxy,
+     fetchWebPort,
+     saveWebPort,
+     fetchStatus,
+     restartSystem,
+     exportDeviceHistory
+   };
 });

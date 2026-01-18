@@ -126,69 +126,99 @@
 </template>
 
 <script setup>
-import { useAppStore } from '../stores/appStore';
-import { VueDraggable } from 'vue-draggable-plus';
-import { TrashIcon, GripVerticalIcon } from 'lucide-vue-next';
+ import { useAppStore } from '../stores/appStore';
+ import { VueDraggable } from 'vue-draggable-plus';
+ import { TrashIcon, GripVerticalIcon } from 'lucide-vue-next';
+ import validators from '../utils/validators';
 
-const store = useAppStore();
+ const store = useAppStore();
 
-const addProxy = () => {
-  store.proxies.push({
-    // ID will be assigned by backend usually, but for new item we leave it empty or temp
-    id: '',
-    name: 'New Proxy',
-    listen_addr: ':5020',
-    target_addr: '127.0.0.1:502',
-    enabled: true,
-    paused: false,
-    connection_timeout: 10,
-    read_timeout: 30,
-    max_retries: 3,
-    max_read_size: 0,
-    description: '',
-    _isNew: true, // Internal flag
-    _showAdvanced: false
-  });
-};
+ const validationErrors = ref({});
 
-const removeProxy = async (id) => {
-    if (!id) {
-        // Removing an unsaved new proxy
-        const idx = store.proxies.findIndex(p => !p.id);
-        if (idx !== -1) store.proxies.splice(idx, 1);
-        return;
-    }
-    if (confirm('Are you sure you want to remove this proxy?')) {
-        await store.deleteProxy(id);
-    }
-};
+ const addProxy = () => {
+   store.proxies.push({
+     // ID will be assigned by backend usually, but for new item we leave it empty or temp
+     id: '',
+     name: 'New Proxy',
+     listen_addr: ':5020',
+     target_addr: '127.0.0.1:502',
+     enabled: true,
+     paused: false,
+     connection_timeout: 10,
+     read_timeout: 30,
+     max_retries: 3,
+     max_read_size: 0,
+     description: '',
+     _isNew: true, // Internal flag
+     _showAdvanced: false
+   });
+ };
 
-const saveProxy = async (proxy) => {
-    let success = false;
-    if (proxy._isNew) {
-        success = await store.addProxy(proxy);
-    } else {
-        success = await store.updateProxy(proxy);
-    }
-    if (success) {
-        // Refresh handled by store, but we might want to clear dirty flags if we kept the object
-        // Store re-fetch replaces the list, so flags are gone.
-    }
-};
+ const removeProxy = async (id) => {
+   if (!id) {
+     // Removing an unsaved new proxy
+     const idx = store.proxies.findIndex(p => !p.id);
+     if (idx !== -1) store.proxies.splice(idx, 1);
+     return;
+     }
+   if (confirm('Are you sure you want to remove this proxy?')) {
+     await store.deleteProxy(id);
+     }
+ };
 
-const savePort = async () => {
-    if (confirm('Changing the port requires a system restart. Continue?')) {
-        await store.saveWebPort(store.webPort);
-    }
-};
+ const saveProxy = async (proxy) => {
+   // Validate before saving
+   const errors = validators.validateProxyConfig(proxy);
 
-const markDirty = (proxy) => {
-    if (!proxy._isNew) {
-        proxy._isDirty = true;
-    }
-};
+   if (errors) {
+     validationErrors.value = errors;
+     return;
+   }
 
-const onReorder = () => {
-    // Backend doesn't support reordering yet (ID based list), but visually it works.
-};
+   validationErrors.value = {};
+
+   let success = false;
+   if (proxy._isNew) {
+     success = await store.addProxy(proxy);
+   } else {
+     success = await store.updateProxy(proxy);
+   }
+   if (success) {
+     // Refresh handled by store, but we might want to clear dirty flags if we kept the object
+     // Store re-fetch replaces the list, so flags are gone.
+   }
+ };
+
+ const savePort = async () => {
+   if (confirm('Changing the port requires a system restart. Continue?')) {
+     await store.saveWebPort(store.webPort);
+     }
+ };
+
+ const markDirty = (proxy) => {
+   if (!proxy._isNew) {
+     proxy._isDirty = true;
+     // Clear validation error on input
+     if (validationErrors.value[proxy.id]) {
+       delete validationErrors.value[proxy.id];
+     }
+   }
+ };
+
+ const validateField = (proxy, field, value) => {
+   const errors = validators.validateProxyConfig({ ...proxy, [field]: value });
+
+   if (errors && errors[field]) {
+     validationErrors.value[proxy.id || proxy._tempId] = {
+       ...validationErrors.value[proxy.id || proxy._tempId],
+       [field]: errors[field]
+     };
+   } else if (validationErrors.value[proxy.id || proxy._tempId]) {
+     delete validationErrors.value[proxy.id || proxy._tempId][field];
+   }
+ };
+
+ const onReorder = () => {
+   // Backend doesn't support reordering yet (ID based list), but visually it works.
+ };
 </script>

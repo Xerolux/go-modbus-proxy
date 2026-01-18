@@ -2,6 +2,8 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
+	"modbusproxy/pkg/database"
 	"net/http"
 )
 
@@ -46,7 +48,8 @@ func (s *Server) handleDeviceHistory(w http.ResponseWriter, r *http.Request) {
 	// Get query parameters
 	deviceIP := r.URL.Query().Get("device_ip")
 	proxyID := r.URL.Query().Get("proxy_id")
-	limit := 100 // default limit
+	limit := 100                          // default limit
+	format := r.URL.Query().Get("format") // csv or json
 
 	var history interface{}
 	var err error
@@ -61,6 +64,24 @@ func (s *Server) handleDeviceHistory(w http.ResponseWriter, r *http.Request) {
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if format == "csv" {
+		w.Header().Set("Content-Type", "text/csv")
+		w.Header().Set("Content-Disposition", "attachment; filename=device_history.csv")
+		_, _ = w.Write([]byte("IP,Proxy ID,Connected At,Request Count\n"))
+
+		if entries, ok := history.([]*database.ConnectionHistoryEntry); ok {
+			for _, entry := range entries {
+				line := fmt.Sprintf("%s,%s,%s,%d\n",
+					entry.DeviceIP,
+					entry.ProxyID,
+					entry.ConnectedAt.Format("2006-01-02 15:04:05"),
+					entry.RequestCount)
+				w.Write([]byte(line))
+			}
+		}
 		return
 	}
 
