@@ -217,7 +217,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    token,
 		Expires:  time.Now().Add(24 * time.Hour),
 		HttpOnly: true,
-		Secure:   true, // Only send over HTTPS
+		Secure:   cfg.TLSEnabled, // Only send over HTTPS if TLS is enabled
 		SameSite: http.SameSiteStrictMode,
 		Path:     "/",
 	})
@@ -229,7 +229,7 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		Value:    csrfToken,
 		Path:     "/",
 		HttpOnly: false,
-		Secure:   true,
+		Secure:   cfg.TLSEnabled,
 		SameSite: http.SameSiteStrictMode,
 	})
 
@@ -239,7 +239,6 @@ func (s *Server) handleLogin(w http.ResponseWriter, r *http.Request) {
 		"success":               true,
 		"force_password_change": cfg.ForcePasswordChange,
 	})
-	w.WriteHeader(http.StatusOK)
 }
 
 func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {

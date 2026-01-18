@@ -140,7 +140,12 @@
  export default {
    methods: {
      formatDate(dateStr) {
+       // Handle "timestamp" field from backend or "time" if key changes
        const date = new Date(dateStr);
+       // Check if date is valid
+       if (isNaN(date.getTime())) {
+           return dateStr || '';
+       }
        return date.toLocaleString('de-DE', {
          hour: '2-digit',
          minute: '2-digit',
