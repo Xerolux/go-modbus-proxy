@@ -3,14 +3,14 @@ version: '3.8'
 services:
   modbridge:
     # Option 1: Use pre-built image from GitHub Container Registry (recommended)
-    image: ghcr.io/xerolux/modbridge:latest
+    # image: ghcr.io/xerolux/modbridge:latest
 
     # Option 2: Build locally (comment out 'image' above and uncomment below)
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
-    #   args:
-    #     VERSION: ${VERSION:-dev}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VERSION: ${VERSION:-dev}
 
     container_name: modbridge
     hostname: modbridge

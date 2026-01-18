@@ -156,7 +156,6 @@ func (ctl *IPAccessControl) ClearExpiredBans() {
 	ctl.mu.Lock()
 	defer ctl.mu.Unlock()
 
-	now := time.Now()
 	for ip, banTime := range ctl.banned {
 		if time.Since(banTime) > ctl.config.BanDuration {
 			delete(ctl.banned, ip)
@@ -177,7 +176,7 @@ func (ctl *IPAccessControl) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ip, _, err := net.SplitHostPort(r.RemoteAddr)
 		if err != nil {
-			next(w, r)
+			next.ServeHTTP(w, r)
 			return
 		}
 
@@ -187,6 +186,6 @@ func (ctl *IPAccessControl) Middleware(next http.Handler) http.Handler {
 		}
 
 		ctx := context.WithValue(r.Context(), "client_ip", ip)
-		next(w, r.WithContext(ctx))
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
