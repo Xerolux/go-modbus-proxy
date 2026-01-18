@@ -32,6 +32,11 @@
           command: () => navigate('/control')
       },
       {
+          label: 'Devices',
+          icon: 'pi pi-desktop',
+          command: () => navigate('/devices')
+      },
+      {
           label: 'Logs',
           icon: 'pi pi-list',
           command: () => navigate('/logs')

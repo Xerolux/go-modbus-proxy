@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	_ "expvar"
 	"log"
 	"modbusproxy/pkg/api"
 	"modbusproxy/pkg/auth"
@@ -11,6 +12,7 @@ import (
 	"modbusproxy/pkg/manager"
 	"modbusproxy/pkg/web"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"os/signal"
 	"syscall"

@@ -10,6 +10,8 @@ import (
 	"modbusproxy/pkg/metrics"
 	"modbusproxy/pkg/middleware"
 	"net/http"
+	"net/http/pprof"
+	"os"
 	"time"
 
 	"github.com/google/uuid"
@@ -76,6 +78,15 @@ func (s *Server) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/metrics", s.cors.Middleware(s.handleMetrics))
 	mux.HandleFunc("/api/login", s.cors.Middleware(s.security.Middleware(s.handleLogin)))
 	mux.HandleFunc("/api/setup", s.cors.Middleware(s.security.Middleware(s.handleSetup)))
+
+	// Pprof endpoints (debug mode only)
+	if os.Getenv("DEBUG") == "true" {
+		mux.Handle("/debug/pprof/", http.HandlerFunc(pprof.Index))
+		mux.Handle("/debug/pprof/cmdline", http.HandlerFunc(pprof.Cmdline))
+		mux.Handle("/debug/pprof/profile", http.HandlerFunc(pprof.Profile))
+		mux.Handle("/debug/pprof/symbol", http.HandlerFunc(pprof.Symbol))
+		mux.Handle("/debug/pprof/trace", http.HandlerFunc(pprof.Trace))
+	}
 
 	// Protected routes
 	mux.HandleFunc("/api/proxies", authMW(s.handleProxies))
