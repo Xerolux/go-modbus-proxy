@@ -185,3 +185,39 @@ func (v *Validator) combineErrors(errs []error) error {
 	}
 	return errors.New(strings.Join(messages, "; "))
 }
+
+// ValidatePort validates a port number or address string
+func (v *Validator) ValidatePort(port string) error {
+	if port == "" {
+		return errors.New("port cannot be empty")
+	}
+
+	// Check if it starts with : (all interfaces)
+	if strings.HasPrefix(port, ":") {
+		portStr := port[1:]
+		num, err := strconv.Atoi(portStr)
+		if err != nil {
+			return errors.New("invalid port number")
+		}
+		if num < 1 || num > 65535 {
+			return errors.New("port must be between 1 and 65535")
+		}
+		return nil
+	}
+
+	// Full address (IP:Port or Host:Port)
+	_, portStr, err := net.SplitHostPort(port)
+	if err != nil {
+		return errors.New("invalid address format, expected 'host:port' or ':port'")
+	}
+
+	num, err := strconv.Atoi(portStr)
+	if err != nil {
+		return errors.New("invalid port number")
+	}
+	if num < 1 || num > 65535 {
+		return errors.New("port must be between 1 and 65535")
+	}
+
+	return nil
+}

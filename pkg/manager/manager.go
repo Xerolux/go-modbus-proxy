@@ -89,10 +89,13 @@ func (m *Manager) RemoveProxy(id string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	if p, ok := m.proxies[id]; ok {
-		p.Stop()
-		delete(m.proxies, id)
+	if _, ok := m.proxies[id]; !ok {
+		return fmt.Errorf("proxy not found")
 	}
+
+	p := m.proxies[id]
+	p.Stop()
+	delete(m.proxies, id)
 
 	// Broadcast event
 	m.broadcaster.Broadcast(map[string]interface{}{
@@ -102,7 +105,7 @@ func (m *Manager) RemoveProxy(id string) error {
 	})
 
 	return m.cfgMgr.Update(func(c *config.Config) error {
-		newProxies := make([]config.ProxyConfig, 0, len(c.Proxies)-1)
+		newProxies := make([]config.ProxyConfig, 0, len(c.Proxies))
 		for _, pc := range c.Proxies {
 			if pc.ID != id {
 				newProxies = append(newProxies, pc)

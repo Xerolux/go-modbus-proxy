@@ -64,7 +64,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, nextTick } from 'vue';
+import { ref, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import { GridStack } from 'gridstack';
 import 'gridstack/dist/gridstack.min.css';
 import axios from 'axios';
@@ -82,6 +82,7 @@ const selectedProxy = ref(null);
 const proxyOptions = ref([]);
 const loading = ref(true);
 const error = ref(null);
+let sseDisconnect = null;
 
 onMounted(async () => {
     try {
@@ -111,7 +112,7 @@ onMounted(async () => {
         if (savedLayout) {
             try {
                 layoutToLoad = JSON.parse(savedLayout);
-            } catch (e) { 
+            } catch (e) {
                 console.error(e);
             }
         }
@@ -137,6 +138,39 @@ onMounted(async () => {
         grid.value.on('dragstop', saveLayout);
         grid.value.on('resizestop', saveLayout);
 
+        const { data, disconnect } = useEventSource('/api/proxies/stream');
+        sseDisconnect = disconnect;
+
+        watch(data, (eventData) => {
+            if (!eventData) return;
+
+            const eventType = eventData.type;
+            const proxyData = eventData.proxy;
+
+            switch (eventType) {
+                case 'proxy_added':
+                case 'proxy_updated':
+                case 'proxy_started':
+                case 'proxy_stopped':
+                    if (proxyData) {
+                        const index = proxies.value.findIndex(p => p.id === proxyData.id);
+                        if (index !== -1) {
+                            proxies.value[index] = proxyData;
+                        } else {
+                            proxies.value.push(proxyData);
+                            proxyOptions.value.push({ name: proxyData.name, id: proxyData.id });
+                        }
+                    }
+                    break;
+                case 'proxy_removed':
+                    if (eventData.proxy_id) {
+                        proxies.value = proxies.value.filter(p => p.id !== eventData.proxy_id);
+                        proxyOptions.value = proxyOptions.value.filter(p => p.id !== eventData.proxy_id);
+                    }
+                    break;
+            }
+        });
+
     } catch (err) {
         error.value = err.message;
         loading.value = false;
@@ -146,6 +180,9 @@ onMounted(async () => {
 onUnmounted(() => {
     if (grid.value) {
         grid.value.destroy();
+    }
+    if (sseDisconnect) {
+        sseDisconnect();
     }
 });
 

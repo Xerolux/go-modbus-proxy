@@ -228,6 +228,11 @@ func (s *Server) handleProxies(w http.ResponseWriter, r *http.Request) {
 			req.ID = uuid.New().String()
 		}
 
+		if err := s.validator.ValidateProxyConfig(req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		if err := s.mgr.AddProxy(req, true); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
@@ -244,6 +249,11 @@ func (s *Server) handleProxies(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPut {
 		var req config.ProxyConfig
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		if err := s.validator.ValidateProxyConfig(req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
@@ -381,6 +391,11 @@ func (s *Server) handleWebPort(w http.ResponseWriter, r *http.Request) {
 		// Validate port format
 		if req.WebPort == "" {
 			http.Error(w, "web_port cannot be empty", http.StatusBadRequest)
+			return
+		}
+
+		if err := s.validator.ValidatePort(req.WebPort); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 

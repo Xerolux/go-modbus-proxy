@@ -58,15 +58,17 @@ func TestHandleStatus(t *testing.T) {
 	}
 
 	var response map[string]interface{}
-	json.Unmarshal(w.Body.Bytes(), &response)
+	if err := json.Unmarshal(w.Body.Bytes(), &response); err != nil {
+		t.Fatalf("Failed to unmarshal response: %v", err)
+	}
 
 	if response["setup_required"] != true {
 		t.Error("Expected setup_required true")
 	}
 
-	proxies, ok := response["proxies"].([]map[string]interface{})
+	proxies, ok := response["proxies"].([]interface{})
 	if !ok {
-		t.Error("proxies is not a list")
+		t.Fatalf("proxies is not a list, got %T: %v", response["proxies"], response["proxies"])
 	}
 
 	if len(proxies) != 0 {
@@ -132,10 +134,14 @@ func TestHandleProxiesPostValid(t *testing.T) {
 	server := NewServer(cfgMgr, mgr, nil, log)
 
 	cfg := config.ProxyConfig{
-		ID:         "test-id",
-		Name:       "Test Proxy",
-		ListenAddr: ":5020",
-		TargetAddr: "192.168.1.100:502",
+		ID:                "test-id",
+		Name:              "Test Proxy",
+		ListenAddr:        ":5020",
+		TargetAddr:        "192.168.1.100:502",
+		ConnectionTimeout: 5,
+		ReadTimeout:       5,
+		MaxRetries:        3,
+		MaxReadSize:       100,
 	}
 
 	body, _ := json.Marshal(cfg)

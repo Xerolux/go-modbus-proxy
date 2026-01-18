@@ -9,11 +9,11 @@
       "target_addr": "192.168.1.100:502",
       "enabled": false,
       "paused": false,
-      "connection_timeout": 0,
-      "read_timeout": 0,
-      "max_retries": 0,
+      "connection_timeout": 5,
+      "read_timeout": 5,
+      "max_retries": 3,
       "description": "",
-      "max_read_size": 0
+      "max_read_size": 100
     }
   ]
 }

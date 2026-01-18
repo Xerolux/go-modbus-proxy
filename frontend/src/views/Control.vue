@@ -6,7 +6,7 @@
             <i class="pi pi-spin pi-spinner text-4xl"></i>
         </div>
 
-        <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div v-else class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card v-for="proxy in proxies" :key="proxy.id" class="bg-gray-800 text-white">
                 <template #title>
                     <div class="flex justify-between items-center">
@@ -20,13 +20,14 @@
                         <div class="text-sm">Listen: {{ proxy.listen_addr }}</div>
                         <div class="text-sm">Target: {{ proxy.target_addr }}</div>
 
-                        <div class="flex gap-2 mt-2">
+                        <div class="grid grid-cols-3 gap-2 mt-2">
                              <Button
                                 icon="pi pi-play"
                                 severity="success"
                                 label="Start"
                                 :disabled="proxy.status === 'Running'"
                                 @click="controlProxy(proxy.id, 'start')"
+                                class="text-xs sm:text-sm"
                              />
                              <Button
                                 icon="pi pi-stop"
@@ -34,13 +35,15 @@
                                 label="Stop"
                                 :disabled="proxy.status === 'Stopped' || proxy.status === 'Error'"
                                 @click="controlProxy(proxy.id, 'stop')"
+                                class="text-xs sm:text-sm"
                              />
-                              <Button
+                               <Button
                                 icon="pi pi-refresh"
                                 severity="info"
                                 label="Restart"
                                 :disabled="proxy.status === 'Stopped'"
                                 @click="controlProxy(proxy.id, 'restart')"
+                                class="text-xs sm:text-sm"
                              />
                         </div>
                     </div>
@@ -52,29 +55,21 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import axios from 'axios';
 import Card from 'primevue/card';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 import Toast from 'primevue/toast';
 import { useToast } from 'primevue/usetoast';
+import { useEventSource } from '../utils/eventSource';
 
 const proxies = ref([]);
 const loading = ref(true);
 const toast = useToast();
-const timer = ref(null);
+let eventSource = null;
 
 onMounted(async () => {
-    fetchProxies();
-    timer.value = setInterval(fetchProxies, 2000);
-});
-
-onUnmounted(() => {
-    if (timer.value) clearInterval(timer.value);
-});
-
-const fetchProxies = async () => {
     try {
         const res = await axios.get('/api/proxies');
         proxies.value = res.data;
@@ -83,7 +78,49 @@ const fetchProxies = async () => {
     } finally {
         loading.value = false;
     }
-};
+
+    const { data, disconnect, isConnected } = useEventSource('/api/proxies/stream');
+
+    watch(isConnected, (connected) => {
+        if (!connected) {
+            console.warn('SSE connection lost, polling fallback enabled');
+        }
+    });
+
+    watch(data, (eventData) => {
+        if (!eventData) return;
+
+        const eventType = eventData.type;
+        const proxyData = eventData.proxy;
+
+        switch (eventType) {
+            case 'proxy_added':
+            case 'proxy_updated':
+            case 'proxy_started':
+            case 'proxy_stopped':
+                if (proxyData) {
+                    const index = proxies.value.findIndex(p => p.id === proxyData.id);
+                    if (index !== -1) {
+                        proxies.value[index] = proxyData;
+                    } else {
+                        proxies.value.push(proxyData);
+                    }
+                }
+                break;
+            case 'proxy_removed':
+                if (eventData.proxy_id) {
+                    proxies.value = proxies.value.filter(p => p.id !== eventData.proxy_id);
+                }
+                break;
+        }
+    });
+});
+
+onUnmounted(() => {
+    if (eventSource) {
+        eventSource.disconnect();
+    }
+});
 
 const controlProxy = async (id, action) => {
     try {

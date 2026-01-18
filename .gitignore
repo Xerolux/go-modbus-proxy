@@ -16,6 +16,9 @@ modbusproxy
 coverage.txt
 coverage.html
 
+# Test configuration files
+pkg/**/test.json
+
 # Dependency directories
 vendor/
 

@@ -213,3 +213,56 @@ func TestCache(t *testing.T) {
 		}
 	})
 }
+
+func TestValidatePort(t *testing.T) {
+	v := NewValidator()
+
+	t.Run("Valid port only", func(t *testing.T) {
+		err := v.ValidatePort(":8080")
+		if err != nil {
+			t.Errorf("Valid port failed: %v", err)
+		}
+	})
+
+	t.Run("Valid IP:Port", func(t *testing.T) {
+		err := v.ValidatePort("127.0.0.1:8080")
+		if err != nil {
+			t.Errorf("Valid IP:Port failed: %v", err)
+		}
+	})
+
+	t.Run("Valid Hostname:Port", func(t *testing.T) {
+		err := v.ValidatePort("localhost:8080")
+		if err != nil {
+			t.Errorf("Valid Hostname:Port failed: %v", err)
+		}
+	})
+
+	t.Run("Empty port", func(t *testing.T) {
+		err := v.ValidatePort("")
+		if err == nil {
+			t.Error("Expected error for empty port")
+		}
+	})
+
+	t.Run("Invalid port number", func(t *testing.T) {
+		err := v.ValidatePort(":99999")
+		if err == nil {
+			t.Error("Expected error for invalid port number")
+		}
+	})
+
+	t.Run("Port too low", func(t *testing.T) {
+		err := v.ValidatePort(":0")
+		if err == nil {
+			t.Error("Expected error for port 0")
+		}
+	})
+
+	t.Run("Invalid format", func(t *testing.T) {
+		err := v.ValidatePort("invalid")
+		if err == nil {
+			t.Error("Expected error for invalid format")
+		}
+	})
+}

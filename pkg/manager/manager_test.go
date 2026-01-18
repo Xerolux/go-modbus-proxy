@@ -34,7 +34,8 @@ func TestAddProxy(t *testing.T) {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
 	defer log.Close()
-	m := NewManager(nil, log, nil)
+	cfgMgr := config.NewManager("test.json")
+	m := NewManager(cfgMgr, log, nil)
 
 	cfg := config.ProxyConfig{
 		ID:         "test-id",
@@ -69,7 +70,8 @@ func TestRemoveProxy(t *testing.T) {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
 	defer log.Close()
-	m := NewManager(nil, log, nil)
+	cfgMgr := config.NewManager("test.json")
+	m := NewManager(cfgMgr, log, nil)
 
 	cfg := config.ProxyConfig{
 		ID:         "test-id",
@@ -79,7 +81,12 @@ func TestRemoveProxy(t *testing.T) {
 		Enabled:    true,
 	}
 
-	m.AddProxy(cfg, false)
+	// Add proxy to config first
+	err = m.AddProxy(cfg, true)
+	if err != nil {
+		t.Fatalf("AddProxy failed: %v", err)
+	}
+
 	err = m.RemoveProxy("test-id")
 	if err != nil {
 		t.Errorf("RemoveProxy failed: %v", err)
@@ -96,7 +103,8 @@ func TestRemoveProxyNotFound(t *testing.T) {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
 	defer log.Close()
-	m := NewManager(nil, log, nil)
+	cfgMgr := config.NewManager("test.json")
+	m := NewManager(cfgMgr, log, nil)
 
 	err = m.RemoveProxy("non-existent-id")
 	if err == nil {
@@ -110,7 +118,8 @@ func TestGetProxies(t *testing.T) {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
 	defer log.Close()
-	m := NewManager(nil, log, nil)
+	cfgMgr := config.NewManager("test.json")
+	m := NewManager(cfgMgr, log, nil)
 
 	cfg := config.ProxyConfig{
 		ID:         "test-id",
@@ -138,7 +147,8 @@ func TestGetProxyStatus(t *testing.T) {
 		t.Fatalf("Failed to create logger: %v", err)
 	}
 	defer log.Close()
-	m := NewManager(nil, log, nil)
+	cfgMgr := config.NewManager("test.json")
+	m := NewManager(cfgMgr, log, nil)
 
 	cfg := config.ProxyConfig{
 		ID:         "test-id",
@@ -149,7 +159,7 @@ func TestGetProxyStatus(t *testing.T) {
 		Paused:     false,
 	}
 
-	m.AddProxy(cfg, false)
+	m.AddProxy(cfg, true)
 
 	status := m.getProxyStatus("test-id")
 	if status == nil {
