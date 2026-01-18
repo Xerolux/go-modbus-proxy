@@ -4,28 +4,14 @@ import (
 	"encoding/json"
 	"modbusproxy/pkg/config"
 	"net/http"
+	"runtime"
+	"time"
 )
 
 func (s *Server) handleLogDownload(w http.ResponseWriter, r *http.Request) {
-	// Simple implementation: dump current ring buffer as JSON
-	// A better implementation would read from the file on disk.
-	// But let's check what the user asked: "Download Logfile(s)"
-	// The logger writes to a file. Let's serve that file.
-
-	// We need to access the file path from logger, but it's private.
-	// Let's assume for now we just serve recent logs as JSON for simplicity,
-	// or we expose the file path.
-	// Given "Log writes a log entry ... to file", we can just stream the file.
-	// But we don't know the path here easily unless we expose it.
-	// Let's rely on GetRecent for now or better, expose ReadLogs from logger.
-
-	// For V1, downloading the in-memory buffer is safe.
-	// If we want the full file, we need to know where it is.
-	// Let's stick to in-memory dump or updated logger.
-
 	w.Header().Set("Content-Disposition", "attachment; filename=proxy.log")
 	w.Header().Set("Content-Type", "application/json")
-	logs := s.log.GetRecent(10000) // Get all we have in memory
+	logs := s.log.GetRecent(10000)
 	for _, l := range logs {
 		json.NewEncoder(w).Encode(l)
 	}
@@ -36,7 +22,6 @@ func (s *Server) handleConfigExport(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	cfg := s.cfgMgr.Get()
-	// Strip password hash for security
 	cfg.AdminPassHash = ""
 	json.NewEncoder(w).Encode(cfg)
 }
@@ -53,16 +38,7 @@ func (s *Server) handleConfigImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Validate
-	if len(newCfg.Proxies) == 0 {
-		// Just a warning?
-	}
-
 	err := s.cfgMgr.Update(func(c *config.Config) error {
-		// Keep existing password if import doesn't have one (likely)
-		// If import has one, maybe we should ignore it unless explicitly asked?
-		// Requirement: "Export as JSON (ohne Passwort/Secrets)"
-		// So Import likely won't have it. Keep existing.
 		pass := c.AdminPassHash
 		*c = newCfg
 		c.AdminPassHash = pass
@@ -74,8 +50,118 @@ func (s *Server) handleConfigImport(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Reload proxies
-	s.mgr.Initialize() // Re-sync
-
+	s.mgr.Initialize()
 	w.WriteHeader(http.StatusOK)
+}
+
+func (s *Server) handleSystemConfig(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodGet {
+		cfg := s.cfgMgr.Get()
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(cfg)
+		return
+	}
+
+	if r.Method == http.MethodPut {
+		var req config.Config
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		err := s.cfgMgr.Update(func(c *config.Config) error {
+			c.LogLevel = req.LogLevel
+			c.LogMaxSize = req.LogMaxSize
+			c.LogMaxFiles = req.LogMaxFiles
+			c.LogMaxAgeDays = req.LogMaxAgeDays
+			c.TLSEnabled = req.TLSEnabled
+			c.TLSCertFile = req.TLSCertFile
+			c.TLSKeyFile = req.TLSKeyFile
+			c.SessionTimeout = req.SessionTimeout
+			c.CORSAllowedOrigins = req.CORSAllowedOrigins
+			c.CORSAllowedMethods = req.CORSAllowedMethods
+			c.CORSAllowedHeaders = req.CORSAllowedHeaders
+			c.RateLimitEnabled = req.RateLimitEnabled
+			c.RateLimitRequests = req.RateLimitRequests
+			c.RateLimitBurst = req.RateLimitBurst
+			c.IPWhitelistEnabled = req.IPWhitelistEnabled
+			c.IPWhitelist = req.IPWhitelist
+			c.IPBlacklistEnabled = req.IPBlacklistEnabled
+			c.IPBlacklist = req.IPBlacklist
+			c.EmailEnabled = req.EmailEnabled
+			c.EmailSMTPServer = req.EmailSMTPServer
+			c.EmailSMTPPort = req.EmailSMTPPort
+			c.EmailFrom = req.EmailFrom
+			c.EmailTo = req.EmailTo
+			c.EmailUsername = req.EmailUsername
+			c.EmailPassword = req.EmailPassword
+			c.EmailAlertOnError = req.EmailAlertOnError
+			c.EmailAlertOnWarning = req.EmailAlertOnWarning
+			c.BackupEnabled = req.BackupEnabled
+			c.BackupInterval = req.BackupInterval
+			c.BackupRetention = req.BackupRetention
+			c.BackupPath = req.BackupPath
+			c.BackupDatabase = req.BackupDatabase
+			c.BackupConfig = req.BackupConfig
+			c.MetricsEnabled = req.MetricsEnabled
+			c.MetricsPort = req.MetricsPort
+			c.DebugMode = req.DebugMode
+			c.MaxConnections = req.MaxConnections
+			return nil
+		})
+
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+		return
+	}
+
+	http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+}
+
+var startTime time.Time
+
+func (s *Server) handleSystemInfo(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if startTime.IsZero() {
+		startTime = time.Now()
+	}
+
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+
+	proxies := s.mgr.GetProxies()
+	runningProxies := 0
+
+	for _, p := range proxies {
+		if status, ok := p["status"].(string); ok && status == "Running" {
+			runningProxies++
+		}
+	}
+
+	info := map[string]interface{}{
+		"uptime_seconds":  time.Since(startTime).Seconds(),
+		"uptime_human":    time.Since(startTime).String(),
+		"goroutines":      runtime.NumGoroutine(),
+		"memory_alloc_mb": memStats.Alloc / 1024 / 1024,
+		"memory_sys_mb":   memStats.Sys / 1024 / 1024,
+		"memory_gc_mb":    memStats.NextGC / 1024 / 1024,
+		"num_cpu":         runtime.NumCPU(),
+		"total_proxies":   len(proxies),
+		"running_proxies": runningProxies,
+		"go_version":      runtime.Version(),
+		"os":              runtime.GOOS,
+		"arch":            runtime.GOARCH,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(info)
 }

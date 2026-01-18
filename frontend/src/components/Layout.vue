@@ -42,6 +42,11 @@
           command: () => navigate('/logs')
       },
       {
+          label: 'System',
+          icon: 'pi pi-info-circle',
+          command: () => navigate('/system')
+      },
+      {
           label: 'Settings',
           icon: 'pi pi-cog',
           command: () => navigate('/config')

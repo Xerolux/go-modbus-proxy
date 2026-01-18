@@ -1,15 +1,16 @@
  import { createRouter, createWebHashHistory } from 'vue-router'
- import { useAuthStore } from '../stores/auth'
+  import { useAuthStore } from '../stores/auth'
 
- import Dashboard from '../views/Dashboard.vue'
- import Login from '../views/Login.vue'
- import Control from '../views/Control.vue'
- import Config from '../views/Config.vue'
- import Logs from '../views/Logs.vue'
- import Devices from '../views/Devices.vue'
- import Layout from '../components/Layout.vue'
+  import Dashboard from '../views/Dashboard.vue'
+  import Login from '../views/Login.vue'
+  import Control from '../views/Control.vue'
+  import Config from '../views/Config.vue'
+  import Logs from '../views/Logs.vue'
+  import Devices from '../views/Devices.vue'
+  import SystemInfo from '../views/SystemInfo.vue'
+  import Layout from '../components/Layout.vue'
 
- const routes = [
+  const routes = [
   {
     path: '/login',
     name: 'Login',
@@ -44,6 +45,11 @@
         path: '/logs',
         name: 'Logs',
         component: Logs
+      },
+      {
+        path: '/system',
+        name: 'System',
+        component: SystemInfo
       }
     ]
   }
