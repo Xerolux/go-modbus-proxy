@@ -252,12 +252,11 @@ func (p *Pool) cleanup() {
 		p.mu.Unlock()
 
 		// Remove expired connections
-		timeout := time.After(100 * time.Millisecond)
-	cleanup_loop:
-		for {
+		// Iterate through the channel without blocking indefinitely
+		// We use the current length of the channel to determine how many items to check
+		count := len(p.conns)
+		for i := 0; i < count; i++ {
 			select {
-			case <-timeout:
-				break cleanup_loop
 			case pc := <-p.conns:
 				if time.Since(pc.lastUsed) > p.maxIdleTime {
 					pc.conn.Close()
@@ -267,10 +266,10 @@ func (p *Pool) cleanup() {
 				} else {
 					// Put it back
 					p.conns <- pc
-					break cleanup_loop
 				}
 			default:
-				break cleanup_loop
+				// Channel is empty, stop
+				break
 			}
 		}
 	}

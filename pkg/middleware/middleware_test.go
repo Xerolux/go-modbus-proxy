@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"testing"
+	"time"
 
 	"modbusproxy/pkg/config"
 )
@@ -176,7 +177,8 @@ func TestRateLimiter(t *testing.T) {
 }
 
 func TestCache(t *testing.T) {
-	cache := NewCache(1)
+	// Use a reasonable TTL (1 second) instead of 1ns
+	cache := NewCache(1 * time.Second)
 
 	t.Run("Set and Get", func(t *testing.T) {
 		cache.Set("key1", "value1")

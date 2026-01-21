@@ -1,6 +1,7 @@
 {
   "web_port": ":8080",
   "admin_pass_hash": "",
+  "force_password_change": false,
   "proxies": [
     {
       "id": "test-id",
@@ -13,7 +14,56 @@
       "read_timeout": 5,
       "max_retries": 3,
       "description": "",
-      "max_read_size": 100
+      "max_read_size": 100,
+      "tags": null
     }
-  ]
+  ],
+  "log_level": "INFO",
+  "log_max_size": 100,
+  "log_max_files": 10,
+  "log_max_age_days": 30,
+  "tls_enabled": false,
+  "tls_cert_file": "",
+  "tls_key_file": "",
+  "session_timeout": 24,
+  "cors_allowed_origins": [
+    "*"
+  ],
+  "cors_allowed_methods": [
+    "GET",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS"
+  ],
+  "cors_allowed_headers": [
+    "Content-Type",
+    "Authorization"
+  ],
+  "rate_limit_enabled": true,
+  "rate_limit_requests": 60,
+  "rate_limit_burst": 100,
+  "ip_whitelist_enabled": false,
+  "ip_whitelist": null,
+  "ip_blacklist_enabled": false,
+  "ip_blacklist": null,
+  "email_enabled": false,
+  "email_smtp_server": "",
+  "email_smtp_port": 0,
+  "email_from": "",
+  "email_to": "",
+  "email_username": "",
+  "email_password": "",
+  "email_alert_on_error": true,
+  "email_alert_on_warning": false,
+  "backup_enabled": true,
+  "backup_interval": "daily",
+  "backup_retention": 7,
+  "backup_path": "./backups",
+  "backup_database": true,
+  "backup_config": true,
+  "metrics_enabled": true,
+  "metrics_port": ":9090",
+  "debug_mode": false,
+  "max_connections": 1000
 }
