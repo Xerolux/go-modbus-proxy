@@ -8,7 +8,7 @@ import (
 )
 
 func TestHashPassword(t *testing.T) {
-	password := "testpassword123"
+	password := "S7r0ngP@ssw0rd!2024"
 	hash, err := HashPassword(password)
 	if err != nil {
 		t.Fatalf("HashPassword failed: %v", err)
@@ -22,7 +22,7 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestCheckPasswordHash(t *testing.T) {
-	password := "testpassword123"
+	password := "S7r0ngP@ssw0rd!2024"
 	hash, _ := HashPassword(password)
 
 	if !CheckPasswordHash(password, hash) {
