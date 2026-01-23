@@ -3,9 +3,12 @@ package auth
 import (
 	"crypto/rand"
 	"encoding/base64"
+	"errors"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
+	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -31,8 +34,76 @@ func NewAuthenticator() *Authenticator {
 
 // HashPassword hashes a password.
 func HashPassword(password string) (string, error) {
+	// Validate password strength before hashing
+	if err := ValidatePasswordStrength(password); err != nil {
+		return "", err
+	}
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
+}
+
+// ValidatePasswordStrength checks if a password meets security requirements
+func ValidatePasswordStrength(password string) error {
+	if len(password) < 8 {
+		return errors.New("password must be at least 8 characters long")
+	}
+	if len(password) > 128 {
+		return errors.New("password must not exceed 128 characters")
+	}
+
+	var (
+		hasUpper   bool
+		hasLower   bool
+		hasNumber  bool
+		hasSpecial bool
+	)
+
+	for _, char := range password {
+		switch {
+		case unicode.IsUpper(char):
+			hasUpper = true
+		case unicode.IsLower(char):
+			hasLower = true
+		case unicode.IsNumber(char):
+			hasNumber = true
+		case unicode.IsPunct(char) || unicode.IsSymbol(char):
+			hasSpecial = true
+		}
+	}
+
+	// Require at least 3 of 4 character types
+	typeCount := 0
+	if hasUpper {
+		typeCount++
+	}
+	if hasLower {
+		typeCount++
+	}
+	if hasNumber {
+		typeCount++
+	}
+	if hasSpecial {
+		typeCount++
+	}
+
+	if typeCount < 3 {
+		return errors.New("password must contain at least 3 of: uppercase, lowercase, numbers, special characters")
+	}
+
+	// Check for common weak passwords
+	weakPasswords := []string{
+		"password", "Password1!", "12345678", "qwerty",
+		"admin", "letmein", "welcome", "monkey",
+	}
+
+	lowerPassword := strings.ToLower(password)
+	for _, weak := range weakPasswords {
+		if strings.Contains(lowerPassword, weak) {
+			return errors.New("password is too common or weak")
+		}
+	}
+
+	return nil
 }
 
 // CheckPasswordHash checks password.

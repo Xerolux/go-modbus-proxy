@@ -1,8 +1,20 @@
-# Build stage
+# Build stage for frontend
+FROM node:20-alpine AS frontend-builder
+
+WORKDIR /frontend
+
+# Copy frontend files
+COPY frontend/package*.json ./
+RUN npm ci
+
+COPY frontend/ ./
+RUN npm run build
+
+# Build stage for backend
 FROM golang:1.25-alpine AS builder
 
-# Install build dependencies including GCC for CGO/sqlite3
-RUN apk add --no-cache git ca-certificates tzdata gcc musl-dev
+# Install build dependencies including GCC for CGO/sqlite3 and Node.js for frontend
+RUN apk add --no-cache git ca-certificates tzdata gcc musl-dev nodejs npm
 
 WORKDIR /build
 
@@ -10,8 +22,11 @@ WORKDIR /build
 COPY go.mod go.sum ./
 RUN go mod download && go mod verify
 
-# Copy source code
+# Copy source code (but exclude frontend/dist which will be built separately)
 COPY . .
+
+# Copy frontend build to pkg/web/dist before building
+COPY --from=frontend-builder /frontend/dist ./pkg/web/dist
 
 # Build the application with optimizations
 # CGO is required for sqlite3
@@ -34,7 +49,7 @@ RUN apk add --no-cache ca-certificates tzdata wget && \
 
 WORKDIR /app
 
-# Copy binary from builder
+# Copy binary from builder (frontend is already embedded)
 COPY --from=builder /build/modbridge .
 
 # Create directory for logs and config with correct permissions

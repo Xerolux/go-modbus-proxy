@@ -1,20 +1,22 @@
  import { createRouter, createWebHashHistory } from 'vue-router'
-  import { useAuthStore } from '../stores/auth'
+ import { useAuthStore } from '../stores/auth'
 
-  import Dashboard from '../views/Dashboard.vue'
-  import Login from '../views/Login.vue'
-  import Control from '../views/Control.vue'
-  import Config from '../views/Config.vue'
-  import Logs from '../views/Logs.vue'
-  import Devices from '../views/Devices.vue'
-  import SystemInfo from '../views/SystemInfo.vue'
-  import Layout from '../components/Layout.vue'
+ // Lazy load components for better performance
+ const Dashboard = () => import('../views/Dashboard.vue')
+ const Login = () => import('../views/Login.vue')
+ const Control = () => import('../views/Control.vue')
+ const Config = () => import('../views/Config.vue')
+ const Logs = () => import('../views/Logs.vue')
+ const Devices = () => import('../views/Devices.vue')
+ const SystemInfo = () => import('../views/SystemInfo.vue')
+ const Layout = () => import('../components/Layout.vue')
 
-  const routes = [
+ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: Login
+    component: Login,
+    meta: { preload: true }
   },
   {
     path: '/',
@@ -24,7 +26,8 @@
       {
         path: '',
         name: 'Dashboard',
-        component: Dashboard
+        component: Dashboard,
+        meta: { preload: true }
       },
       {
         path: '/control',

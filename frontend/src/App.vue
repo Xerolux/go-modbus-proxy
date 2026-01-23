@@ -25,7 +25,7 @@ watch(() => store.darkMode, (isDark) => {
 </script>
 
 <template>
-  <div :class="darkMode ? 'dark' : 'light'" class="min-h-screen transition-colors duration-300">
+  <div :class="store.darkMode ? 'dark' : 'light'" class="min-h-screen transition-colors duration-300">
     <router-view></router-view>
   </div>
 </template>

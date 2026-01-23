@@ -12,9 +12,17 @@ help: ## Show this help message
 	@echo 'Available targets:'
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-build: ## Build the application
+build: build-frontend ## Build the application
 	@echo "Building $(BINARY_NAME)..."
 	go build $(LDFLAGS) -o $(BINARY_NAME) ./main.go
+
+build-frontend: ## Build the frontend
+	@echo "Building frontend..."
+	cd frontend && npm install
+	cd frontend && npm run build
+	rm -rf pkg/web/dist
+	cp -r frontend/dist pkg/web/dist
+	@echo "Frontend built and copied to pkg/web/dist"
 
 build-all: ## Build for all platforms
 	@echo "Building for all platforms..."
@@ -52,6 +60,8 @@ clean: ## Clean build artifacts
 	rm -f $(BINARY_NAME)
 	rm -f coverage.txt coverage.html
 	rm -rf bin/
+	rm -rf frontend/dist
+	rm -rf pkg/web/dist
 	rm -f *.log
 
 run: build ## Build and run the application

@@ -251,6 +251,14 @@
                                     <div>
                                         <label class="block text-sm font-medium text-gray-300 mb-1">New Password</label>
                                         <Password v-model="passwordForm.newPassword" toggleMask class="w-full" />
+                                        <div class="mt-2 p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
+                                            <p class="text-xs text-blue-300 font-medium mb-1">Passwort-Anforderungen:</p>
+                                            <ul class="text-xs text-gray-400 space-y-1 ml-4 list-disc">
+                                                <li>Mindestens 8 Zeichen lang</li>
+                                                <li>Mindestens 3 von: Großbuchstaben, Kleinbuchstaben, Zahlen, Sonderzeichen</li>
+                                                <li>Nicht zu einfach oder häufig verwendet</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                     <Button label="Change Password" icon="pi pi-key" @click="changePassword" />
                                 </div>
@@ -404,7 +412,18 @@
          toast.add({ severity: 'success', summary: 'Success', detail: 'Password changed successfully', life: 3000 });
          passwordForm.value = { currentPassword: '', newPassword: '' };
      } catch (e) {
-         toast.add({ severity: 'error', summary: 'Error', detail: e.response?.data || e.message, life: 5000 });
+         let errorMsg = e.response?.data || e.message;
+         // Provide user-friendly error messages for common password validation errors
+         if (typeof errorMsg === 'string') {
+             if (errorMsg.includes('at least 8 characters')) {
+                 errorMsg = 'Das Passwort muss mindestens 8 Zeichen lang sein';
+             } else if (errorMsg.includes('at least 3 of')) {
+                 errorMsg = 'Das Passwort muss mindestens 3 dieser Zeichenarten enthalten: Großbuchstaben, Kleinbuchstaben, Zahlen, Sonderzeichen';
+             } else if (errorMsg.includes('too common')) {
+                 errorMsg = 'Das Passwort ist zu einfach oder häufig verwendet';
+             }
+         }
+         toast.add({ severity: 'error', summary: 'Error', detail: errorMsg, life: 5000 });
      }
  };
 

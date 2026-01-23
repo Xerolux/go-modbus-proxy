@@ -262,14 +262,11 @@ func (s *Server) handleChangePassword(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(req.NewPassword) < 6 {
-		http.Error(w, "Password must be at least 6 characters", http.StatusBadRequest)
-		return
-	}
-
+	// HashPassword now includes validation for password strength
 	hash, err := auth.HashPassword(req.NewPassword)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		// Return bad request for validation errors, internal error for actual failures
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

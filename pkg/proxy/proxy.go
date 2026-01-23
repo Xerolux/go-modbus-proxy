@@ -79,14 +79,17 @@ func (p *ProxyInstance) Start() error {
 	}
 	p.listener = l
 
-	// Create connection pool for target
+	// Create connection pool for target with optimized settings
 	poolCfg := pool.Config{
-		InitialSize:    1,
-		MaxSize:        10,
-		MaxIdleTime:    5 * time.Minute,
+		InitialSize:    2, // Optimized: Better initial capacity
+		MaxSize:        20, // Optimized: Increased for higher concurrency
+		MaxIdleTime:    10 * time.Minute, // Optimized: Longer idle time for reusability
 		AcquireTimeout: p.ConnectionTimeout,
 		Dialer: func(ctx context.Context) (net.Conn, error) {
-			d := net.Dialer{Timeout: p.ConnectionTimeout}
+			d := net.Dialer{
+				Timeout:   p.ConnectionTimeout,
+				KeepAlive: 30 * time.Second, // Optimized: TCP keep-alive
+			}
 			return d.DialContext(ctx, "tcp", p.TargetAddr)
 		},
 	}
